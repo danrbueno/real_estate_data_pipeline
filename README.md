@@ -1,5 +1,7 @@
 # real_estate_scraping
-Get information from apartments rental or sales from real estate ads websites
+Scrap data from Brasília, Brazil real estate rental and sales websites. 
+Websites included in this project:
+- https://www.dfimoveis.com.br
 
 Commands for terminal to start project:
 cd imoveis_bsb\scripts
