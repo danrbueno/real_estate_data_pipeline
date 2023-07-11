@@ -10,10 +10,8 @@ def main():
     crawler_settings.setmodule(my_settings)
     process = CrawlerProcess(settings=crawler_settings)
     
-    process.crawl(OlxSpider, input="inputargument", category="rental")
-    # process.crawl(OlxSpider, input="inputargument", category="sale")
-    # process.crawl(DfimoveisSpider, input="inputargument", category="rental")
-    # process.crawl(DfimoveisSpider, input="inputargument", category="sale")
+    process.crawl(DfimoveisSpider, input="inputargument", category="rental")
+    process.crawl(DfimoveisSpider, input="inputargument", category="sale")
     
     process.start()
 
