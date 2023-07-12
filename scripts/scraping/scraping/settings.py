@@ -62,9 +62,9 @@ ROBOTSTXT_OBEY = False
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#    "scraping.pipelines.ScrapingPipeline": 300,
-# }
+ITEM_PIPELINES = {
+   "scraping.pipelines.ScrapingPipeline": 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
@@ -91,24 +91,3 @@ ROBOTSTXT_OBEY = False
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
-
-###################################### Splash Setup ###################################################
-SPLASH_URL = 'http://localhost:8050'
-
-DOWNLOADER_MIDDLEWARES = {
-    'scrapy_splash.SplashCookiesMiddleware': 723,
-    'scrapy_splash.SplashMiddleware': 725,
-    'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
-}
-
-SPIDER_MIDDLEWARES = {
-    'scrapy_splash.SplashDeduplicateArgsMiddleware': 100,
-}
-
-DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
-
-HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
-
-ITEM_PIPELINES = {
-   "scraping.pipelines.ScrapingPipeline": 300,
-}
