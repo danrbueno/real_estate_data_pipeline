@@ -1,6 +1,5 @@
 from scraping import settings as my_settings
 from scraping.spiders.DFImoveis import DfimoveisSpider
-from scraping.spiders.Olx import OlxSpider
 from scrapy.crawler import CrawlerProcess
 from scrapy.settings import Settings
 
