@@ -10,6 +10,13 @@ This Apache Airflow's based project does the follow tasks:
 Website scraped in this project:
 - https://www.dfimoveis.com.br
 
+# DAG:
+
+In Airflow, a DAG – or a Directed Acyclic Graph – is a collection of all the tasks you want to run, organized in a way that reflects their relationships and dependencies.
+
+![image](https://github.com/danrbueno/real_estate/assets/74033549/030e82f1-a767-40e6-af3f-a559be9e63fe)
+
+
 # Airflow configured in a virtual machine
 (https://airflow.apache.org/docs/apache-airflow/stable/start.html#)
 
