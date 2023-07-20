@@ -1,6 +1,6 @@
 # real_estate
 
-This Apache Airflow's based project does the follow tasks:
+This Apache Airflow's based project executes a data pipeline with the following tasks:
 
 1. Scrap data from Brasília, Brazil real estate rentals and sales websites.
 2. Save scraped data into JSON files, separating them by rentals or sales data.
@@ -15,7 +15,7 @@ Website scraped in this project:
 In Airflow, a DAG – or a Directed Acyclic Graph – is a collection of all the tasks you want to run, organized in a way that reflects their relationships and dependencies.
 
 ![image](https://github.com/danrbueno/real_estate/assets/74033549/030e82f1-a767-40e6-af3f-a559be9e63fe)
-
+Representation of the main DAG of this project
 
 # Airflow configured in a virtual machine
 (https://airflow.apache.org/docs/apache-airflow/stable/start.html#)
