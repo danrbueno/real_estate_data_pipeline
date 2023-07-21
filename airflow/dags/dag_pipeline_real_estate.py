@@ -3,7 +3,7 @@ import pandas as pd
 from airflow.models import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
-from airflow.settings import DAGS_FOLDER
+from airflow.operators.empty import EmptyOperator
 from airflow.utils.dates import days_ago
 
 
@@ -121,29 +121,28 @@ args = {"owner": "daniel", "start_date": days_ago(1)}
 dag = DAG(dag_id="dag_pipeline_real_estate", default_args=args, schedule_interval=None)
 
 with dag:
+    task_start_dag = EmptyOperator(task_id="start_dag")
+
     # Scrap data from website https://www.dfimoveis.com.br/aluguel/df/todos/apartamento
     # The output file is defined in the scope of scraping project (/airflow/scraping/scraping/pipelines.py)
     task_scrap_rentals = BashOperator(
         task_id="scrap_rentals",
-        bash_command="cd /home/daniel/repositorios/real_estate/scrapy && scrapy crawl DFImoveis -a category=rentals",
-        task_concurrency=2
+        bash_command="cd /home/daniel/repositorios/real_estate/scrapy && scrapy crawl DFImoveis -a category=rentals"
     )
 
     # Scrap data from website https://www.dfimoveis.com.br/venda/df/todos/apartamento
     # The output file is defined in the scope of scraping project (/airflow/scraping/scraping/pipelines.py)
     task_scrap_sales = BashOperator(
         task_id="scrap_sales",
-        bash_command="cd /home/daniel/repositorios/real_estate/scrapy && scrapy crawl DFImoveis -a category=sales",
-        task_concurrency=2
+        bash_command="cd /home/daniel/repositorios/real_estate/scrapy && scrapy crawl DFImoveis -a category=sales"
     )    
 
     # Adjustments and load dataset into a CSV file
     task_transform_rentals = PythonOperator(
         task_id = "transform_rentals",
-        python_callable=transform_rentals,
-        task_concurrency=2
+        python_callable=transform_rentals
     )
 
     # Task execution order
-    task_scrap_rentals >> task_transform_rentals
-    task_scrap_sales
+    task_start_dag >> task_scrap_rentals >> task_transform_rentals
+    task_start_dag >> task_scrap_sales
