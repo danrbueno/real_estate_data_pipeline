@@ -14,7 +14,7 @@ Website scraped in this project:
 
 In Airflow, a DAG – or a Directed Acyclic Graph – is a collection of all the tasks you want to run, organized in a way that reflects their relationships and dependencies.
 
-![image](https://github.com/danrbueno/real_estate/assets/74033549/1d22db6c-d214-48ac-b7a6-4c2772c4f66c)
+![image](https://github.com/danrbueno/real_estate_data_pipeline/assets/74033549/257333f5-a91c-41ec-9202-805158dec0f7)
 Representation of the main DAG of this project
 
 # Airflow configured in a virtual machine
