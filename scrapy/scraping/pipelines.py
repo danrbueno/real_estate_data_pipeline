@@ -4,13 +4,19 @@
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
 
+import json
+import os
+from pathlib import Path
+
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
-import json
+
 
 class ScrapingPipeline:
     def open_spider(self, spider):
-        file_path = "/home/daniel/repositorios/real_estate/data/web/{}.json".format(spider.category)
+
+        main_dir = str(Path(os.path.dirname(__file__)).parent.parent)
+        file_path = "{}/data/web/{}.json".format(main_dir, spider.category)
         self.file = open(file_path, "w")
 
     def close_spider(self, spider):
