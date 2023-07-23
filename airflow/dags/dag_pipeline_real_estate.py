@@ -275,7 +275,7 @@ def transform_sales():
 
 dag = DAG(
     dag_id="dag_real_estate_data_pipeline",
-    schedule="00 00 * * *",
+    schedule="0 0 * * *",
     start_date=pendulum.datetime(2023, 7, 20)
 )
 
