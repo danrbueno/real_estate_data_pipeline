@@ -5,7 +5,8 @@ This Apache Airflow's based project executes a data pipeline with the following 
 1. Scrap data from Brasília, Brazil real estate rentals and sales websites.
 2. Save scraped data into JSON files, separating them by rentals or sales data.
 3. Clean the scraped data, using pandas
-4. Load clean data into CSV files
+4. Save clean data into CSV files for staging
+5. Load data into MySQL tables, using SQLAlchemy
 
 Website scraped in this project:
 - https://www.dfimoveis.com.br
@@ -14,8 +15,8 @@ Website scraped in this project:
 
 In Airflow, a DAG – or a Directed Acyclic Graph – is a collection of all the tasks you want to run, organized in a way that reflects their relationships and dependencies.
 
-![image](https://github.com/danrbueno/real_estate_data_pipeline/assets/74033549/257333f5-a91c-41ec-9202-805158dec0f7)
-Representation of the main DAG of this project
+![image](https://github.com/danrbueno/real_estate_data_pipeline/assets/74033549/1f2ce60f-5d11-4f34-b4ec-1c704043f86d)
+Representation of the DAG of this project
 
 # Airflow configured in a virtual machine
 (https://airflow.apache.org/docs/apache-airflow/stable/start.html#)
