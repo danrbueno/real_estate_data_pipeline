@@ -16,7 +16,7 @@ class ScrapingPipeline:
     def open_spider(self, spider):
 
         main_dir = str(Path(os.path.dirname(__file__)).parent.parent)
-        file_path = "{}/data/web/{}.json".format(main_dir, spider.category)
+        file_path = "{}/data/web/{}.json".format(main_dir, spider.transaction_type)
         self.file = open(file_path, "w")
 
     def close_spider(self, spider):

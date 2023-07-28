@@ -19,15 +19,15 @@ class DfimoveisSpider(scrapy.Spider):
     url = "https://www.dfimoveis.com.br/{}/df/todos/apartamento?pagina={}"
 
     def start_requests(self):
-        # Category defined at parameter -a in runspider command
+        # transaction_type defined at parameter -a in runspider command
         # Default is "sale"
 
-        if(self.category == "sales"):
-            self.url_category = "venda"
-        elif(self.category == "rentals"):
-            self.url_category = "aluguel"
+        if(self.transaction_type == "sales"):
+            self.url_transaction_type = "venda"
+        elif(self.transaction_type == "rentals"):
+            self.url_transaction_type = "aluguel"
 
-        yield scrapy.Request(self.url.format(self.url_category, 1), self.parse)
+        yield scrapy.Request(self.url.format(self.url_transaction_type, 1), self.parse)
 
     # Scrap all pages
     def parse(self, response):
@@ -58,12 +58,12 @@ class DfimoveisSpider(scrapy.Spider):
         last_page = int(qtd_properties/qtd_properties_page)+1        
 
         if next_page <= last_page:
-            yield scrapy.Request(self.url.format(self.url_category, next_page), self.parse)
+            yield scrapy.Request(self.url.format(self.url_transaction_type, next_page), self.parse)
 
     # Scrap all the properties links
     def parse_property(self, response):
         data = {}
-        data["dt_scraping"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        data["scraped_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         data["link"] = response.url
         data["title"] = response.css("h1::text").extract_first().strip()        
         css_features = ".r-mobile-dados h6"
