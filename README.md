@@ -1,6 +1,6 @@
 # real_estate
 
-This Apache Airflow's based project executes a data pipeline with the following tasks:
+This Apache Airflow's based project executes a data pipeline every day at 12 AM with the following tasks:
 
 1. Scrap data from Brasília, Brazil real estate rentals and sales websites.
 2. Save scraped data into JSON files, separating them by rentals or sales data.
