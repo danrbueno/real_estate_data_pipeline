@@ -1,15 +1,17 @@
-# real_estate
+# real_estate_data_pipeline
 
 This Apache Airflow's based project executes a data pipeline every day at 12 AM with the following tasks:
 
 1. Scrap data from Brasília, Brazil real estate rentals and sales websites.
 2. Save scraped data into JSON files, separating them by rentals or sales data.
-3. Clean the scraped data, using pandas
+3. Clean the scraped data, using Pandas
 4. Save clean data into CSV files for staging
 5. Load data into MySQL tables, using SQLAlchemy
 
 Website scraped in this project:
 - https://www.dfimoveis.com.br
+
+![real_estate_data_pipeline](https://github.com/danrbueno/real_estate_data_pipeline/assets/74033549/a6c3c750-68e9-4b47-ac0c-d691cdbca29b)
 
 # DAG:
 
