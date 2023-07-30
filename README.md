@@ -2,7 +2,7 @@
 
 This Apache Airflow's based project executes a data pipeline every day at 12 AM with the following tasks:
 
-1. Scrap data from Brasília, Brazil real estate rentals and sales websites.
+1. Scrap data from Brasília, Brazil real estate rentals and sales websites, using Scrapy.
 2. Save scraped data into JSON files, separating them by rentals or sales data.
 3. Clean the scraped data, using Pandas
 4. Save clean data into CSV files for staging
