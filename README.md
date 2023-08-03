@@ -82,5 +82,6 @@ airflow scheduler
 # MySQL Model
 
 In the end, the model in MySQL is:
+
 ![model](https://github.com/danrbueno/real_estate_data_pipeline/assets/74033549/9f905960-a2d5-4a5e-ad2e-fe45a7689827)
 
