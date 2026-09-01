@@ -1,4 +1,4 @@
-name: Feature branches: pytest and auto PR
+name: "Feature branches: pytest and auto PR"
 
 on:
   push:
