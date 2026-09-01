@@ -35,7 +35,7 @@ jobs:
           pytest tests
 
   create_pr:
-    name: Create Pull Request to 'test'
+    name: Create Pull Request to 'main'
     needs: test
     if: needs.test.result == 'success'
     runs-on: ubuntu-latest
@@ -47,7 +47,7 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const head = process.env.GITHUB_REF.replace('refs/heads/','');
-            const base = 'test';
+            const base = 'main';
             // check for existing open PR from this branch into base
             const pulls = await github.rest.pulls.list({ owner, repo, head: `${owner}:${head}`, base, state: 'open' });
             if (pulls.data.length > 0) {
