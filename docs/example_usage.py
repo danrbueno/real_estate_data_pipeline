@@ -10,7 +10,7 @@ from pathlib import Path
 project_root = str(Path(__file__).parent)
 sys.path.insert(0, project_root)
 
-from ai_scraper import AIScraper
+from app.ai_scraper import AIScraper
 
 
 def test_basic_scraping():
@@ -48,7 +48,7 @@ def test_basic_scraping():
 
 def example_single_transaction_type():
     """Example: Scrape single transaction type"""
-    from ai_scraper import AIScraper
+    from app.ai_scraper import AIScraper
 
     scraper = AIScraper()
 
@@ -66,7 +66,7 @@ def example_single_transaction_type():
 
 def example_with_airflow():
     """Example: How to use with Airflow"""
-    from ai_scraper import AIScraper
+    from app.ai_scraper import AIScraper
 
     def airflow_task_scrap_rentals():
         """Airflow task that scrapes rentals"""
