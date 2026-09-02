@@ -1,0 +1,6 @@
+[run]
+branch = True
+source = app
+
+[report]
+fail_under = 100
