@@ -1,4 +1,4 @@
-"""AI Scraper module - Replaces Scrapy with OpenAI-powered agents"""
+"""AI Scraper module - OpenAI-powered web scraping agents"""
 
 from ai_scraper.scraper import AIScraper
 from ai_scraper.ai_agent import AIScrapingAgent

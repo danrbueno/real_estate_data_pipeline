@@ -5,18 +5,15 @@
 | Arquivo | Tempo | Descrição |
 |---------|-------|-----------|
 | [AI_SCRAPER_README.md](AI_SCRAPER_README.md) | 2 min | 📌 Quick start e resumo visual |
-| [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) | 3 min | ✅ Resumo da implementação concluída |
 
 ---
 
 ## 📚 Documentação Principal
 
-### Implementação e Migração
+### Referência
 
 | Arquivo | Descrição | Público-Alvo |
 |---------|-----------|-------------|
-| [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) | Resumo executivo completo | Gerentes, Líderes técnicos |
-| [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) | Como migrar de Scrapy para AI | Todos |
 | [CHECKLIST.md](CHECKLIST.md) | Checklist passo-a-passo | Desenvolvedores |
 
 ### Técnico e Arquitetura
@@ -25,7 +22,6 @@
 |---------|-----------|-------------|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Diagramas e arquitetura visual | Arquitetos, Devs |
 | [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | Estrutura completa do projeto | Todos |
-| [CODE_COMPARISON.md](CODE_COMPARISON.md) | Comparação Scrapy vs AI lado-a-lado | Desenvolvedores |
 
 ### Otimização e Operação
 
@@ -78,19 +74,15 @@ example_usage.py               # Exemplos de uso em Python
 ### Para Começar Rápido (5 minutos)
 1. Este arquivo (índice)
 2. [AI_SCRAPER_README.md](AI_SCRAPER_README.md)
-3. [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md)
-4. Execute: `python ai_scraper/main.py --type rentals --max-pages 1`
+3. Execute: `python ai_scraper/main.py --type rentals --max-pages 1`
 
 ### Para Entender Completamente (30 minutos)
-1. [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)
-2. [ARCHITECTURE.md](ARCHITECTURE.md)
-3. [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)
-4. [CODE_COMPARISON.md](CODE_COMPARISON.md)
+1. [ARCHITECTURE.md](ARCHITECTURE.md)
+2. [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)
 
 ### Para Integrar com Airflow (15 minutos)
-1. [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - seção Airflow
-2. [dag_pipeline_real_estate_ai.py](airflow/dags/dag_pipeline_real_estate_ai.py)
-3. [ARCHITECTURE.md](ARCHITECTURE.md) - seção "Integração com Airflow"
+1. [dag_pipeline_real_estate_ai.py](airflow/dags/dag_pipeline_real_estate_ai.py)
+2. [ARCHITECTURE.md](ARCHITECTURE.md) - seção "Integração com Airflow"
 
 ### Para Otimizar em Produção (20 minutos)
 1. [OPTIMIZATION_GUIDE.md](OPTIMIZATION_GUIDE.md)
@@ -103,19 +95,15 @@ example_usage.py               # Exemplos de uso em Python
 
 ### Nível Raiz
 ```
-.env.example                          ✅ NOVO: Template de env
-AI_SCRAPER_README.md                  ✅ NOVO: Quick start
-IMPLEMENTATION_COMPLETE.md            ✅ NOVO: Resumo
-IMPLEMENTATION_SUMMARY.md             ✅ NOVO: Detalhado
-MIGRATION_GUIDE.md                    ✅ NOVO: Guia migração
-OPTIMIZATION_GUIDE.md                 ✅ NOVO: Otimizações
-CODE_COMPARISON.md                    ✅ NOVO: Comparação
-PROJECT_STRUCTURE.md                  ✅ NOVO: Estrutura
-CHECKLIST.md                          ✅ NOVO: Verificação
-ARCHITECTURE.md                       ✅ NOVO: Diagramas
-INDEX.md (este arquivo)               ✅ NOVO: Índice
-example_usage.py                      ✅ NOVO: Exemplos
-README.md                             ✅ ORIGINAL: Documentação projeto
+.env.example                          ✅ Template de env
+AI_SCRAPER_README.md                  ✅ Quick start
+OPTIMIZATION_GUIDE.md                 ✅ Otimizações
+PROJECT_STRUCTURE.md                  ✅ Estrutura
+CHECKLIST.md                          ✅ Verificação
+ARCHITECTURE.md                       ✅ Diagramas
+INDEX.md (este arquivo)               ✅ Índice
+example_usage.py                      ✅ Exemplos
+README.md                             ✅ Documentação projeto
 ```
 
 ### Pasta ai_scraper/
@@ -216,25 +204,6 @@ airflow/dags/
 - Quick start
 - FAQ
 
-#### `IMPLEMENTATION_COMPLETE.md`
-- Resumo de tudo que foi feito
-- Checklist de funcionalidades
-- Próximos passos
-- Status final
-
-#### `IMPLEMENTATION_SUMMARY.md`
-- Implementação detalhada
-- Vantagens sobre Scrapy
-- Estrutura e uso
-- Integrações
-- Estimativa de custo
-
-#### `MIGRATION_GUIDE.md`
-- Passo-a-passo de migração
-- Antes vs Depois
-- Setup Airflow
-- Troubleshooting
-
 #### `OPTIMIZATION_GUIDE.md`
 - Otimizações de performance
 - Escolha de modelos
@@ -242,12 +211,6 @@ airflow/dags/
 - Cache e logging
 - Deploy em produção
 - Escalabilidade
-
-#### `CODE_COMPARISON.md`
-- Comparação lado-a-lado
-- Scrapy vs AI Scraper
-- Exemplos de código
-- Quando usar cada um
 
 #### `PROJECT_STRUCTURE.md`
 - Árvore de diretórios
@@ -304,25 +267,10 @@ airflow/dags/
 ### "Como usar o AI Scraper?"
 → [AI_SCRAPER_README.md](AI_SCRAPER_README.md)
 
-### "Como configurar a API key?"
-→ [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md#2-configurar-openai-api-key)
-
-### "Como integrar com Airflow?"
-→ [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md#-integração-com-airflow)
-
-### "Qual é o custo?"
-→ [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md#-custo-estimado)
-
 ### "Qual arquivo leio primeiro?"
 → [AI_SCRAPER_README.md](AI_SCRAPER_README.md)
 
-### "Como migrar do Scrapy?"
-→ [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)
-
 ### "Como otimizar performance?"
-→ [OPTIMIZATION_GUIDE.md](OPTIMIZATION_GUIDE.md)
-
-### "Qual é a arquitetura?"
 → [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ### "Preciso verificar se tudo funciona?"
@@ -331,9 +279,6 @@ airflow/dags/
 ### "Qual é a estrutura do projeto?"
 → [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)
 
-### "Como o código mudou?"
-→ [CODE_COMPARISON.md](CODE_COMPARISON.md)
-
 ---
 
 ## ⏱️ Tempo de Leitura Estimado
@@ -341,16 +286,12 @@ airflow/dags/
 | Arquivo | Tempo | Prioridade |
 |---------|-------|-----------|
 | AI_SCRAPER_README.md | 2 min | 🔴 Alta |
-| IMPLEMENTATION_COMPLETE.md | 3 min | 🔴 Alta |
 | CHECKLIST.md | 5 min | 🟠 Média |
-| MIGRATION_GUIDE.md | 10 min | 🟠 Média |
 | OPTIMIZATION_GUIDE.md | 15 min | 🟡 Baixa |
 | ARCHITECTURE.md | 10 min | 🟡 Baixa |
-| CODE_COMPARISON.md | 10 min | 🟡 Baixa |
 | PROJECT_STRUCTURE.md | 5 min | 🟡 Baixa |
-| IMPLEMENTATION_SUMMARY.md | 15 min | 🟡 Baixa |
 
-**Total recomendado:** 30-40 minutos para entendimento completo
+**Total recomendado:** 30-35 minutos para entendimento completo
 
 ---
 

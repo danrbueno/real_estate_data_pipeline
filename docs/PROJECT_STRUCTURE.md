@@ -6,10 +6,7 @@
 c:\repos\real_estate_data_pipeline\
 │
 ├── 📄 README.md                          # Documentação original do projeto
-├── 📄 MIGRATION_GUIDE.md                 # Guia de migração Scrapy → AI ⭐
-├── 📄 IMPLEMENTATION_SUMMARY.md          # Resumo da implementação ⭐
 ├── 📄 OPTIMIZATION_GUIDE.md              # Guia de otimizações e boas práticas
-├── 📄 CODE_COMPARISON.md                 # Comparação Scrapy vs AI Scraper
 ├── 📄 CHECKLIST.md                       # Checklist de implementação
 ├── 📄 .env.example                       # Template de variáveis de ambiente
 ├── 📄 example_usage.py                   # Exemplos de uso
@@ -26,8 +23,7 @@ c:\repos\real_estate_data_pipeline\
 │
 ├── 📁 airflow/
 │   ├── 📁 dags/
-│   │   ├── 📄 dag_pipeline_real_estate.py        # DAG original (Scrapy)
-│   │   └── 📄 dag_pipeline_real_estate_ai.py     # ⭐ NOVO: DAG com AI Scraper
+│   │   └── 📄 dag_pipeline_real_estate_ai.py     # DAG com AI Scraper
 │   │   │
 │   │   └── 📁 pipelines/
 │   │       ├── 📄 database.py
@@ -41,18 +37,6 @@ c:\repos\real_estate_data_pipeline\
 │   │           ├── 📄 property.py
 │   │           └── 📄 transaction_type.py
 │
-├── 📁 scrapy/                            # ⚠️  ANTIGO: Pode ser deprecado
-│   ├── 📄 scrap.py
-│   ├── 📄 scrapy.cfg
-│   └── 📁 scraping/
-│       ├── 📄 __init__.py
-│       ├── 📄 items.py
-│       ├── 📄 middlewares.py
-│       ├── 📄 pipelines.py
-│       ├── 📄 settings.py
-│       └── 📁 spiders/
-│           ├── 📄 __init__.py
-│           └── 📄 DFImoveis.py
 │
 ├── 📁 data/
 │   ├── 📁 staging/
@@ -74,10 +58,7 @@ c:\repos\real_estate_data_pipeline\
 - CLI para execução direta
 
 ### 2. Documentação Completa
-- `IMPLEMENTATION_SUMMARY.md` - Visão geral da mudança
-- `MIGRATION_GUIDE.md` - Como migrar do Scrapy
 - `OPTIMIZATION_GUIDE.md` - Otimizações e boas práticas
-- `CODE_COMPARISON.md` - Comparação lado a lado
 - `CHECKLIST.md` - Verificação de implementação
 
 ### 3. Integração Airflow
@@ -87,19 +68,8 @@ c:\repos\real_estate_data_pipeline\
 - `example_usage.py` - Exemplos práticos
 - `.env.example` - Template de variáveis
 
-## 📊 Comparação de Estrutura
+## 📊 Estrutura do AI Scraper
 
-### Antes (Scrapy)
-```
-scrapy/
-├── spiders/
-│   └── DFImoveis.py          # 1 spider com seletores CSS
-├── items.py                   # Definição de items
-├── pipelines.py               # Salvamento
-└── settings.py                # Configuração Scrapy
-```
-
-### Depois (AI Scraper)
 ```
 ai_scraper/
 ├── ai_agent.py                # Agente IA (OpenAI)
@@ -108,8 +78,6 @@ ai_scraper/
 ├── config.py                  # Configuração
 └── main.py                    # CLI
 ```
-
-**Resultado:** Mais modular, testável e escalável
 
 ## 🚀 Fluxo de Dados
 
@@ -137,18 +105,7 @@ Pipeline Existente
   (transform + load + database)
 ```
 
-## 🔄 Fluxo de Transformação
 
-```
-ANTES (Scrapy):
-  Scrapy Spider → CSS Selectors → JSON → Pandas Transform → CSV → MySQL
-
-DEPOIS (AI Scraper):
-  OpenAI Agent → Semântica → JSON → Pandas Transform → CSV → MySQL
-  
-  ⬆️ MESMA SAÍDA
-  ✅ COMPATIBILIDADE TOTAL
-```
 
 ## 📦 Dependências por Módulo
 
@@ -169,20 +126,11 @@ sqlalchemy
 mysql-connector-python
 ```
 
-### Scrapy (antigo, pode remover)
-```
-scrapy
-unidecode
-itemadapter
-```
+
 
 ## 🔐 Configuração de Segurança
 
-### Antes (Scrapy)
-- Nenhuma configuração de segurança especial
-- Sem variáveis de ambiente
 
-### Depois (AI Scraper)
 ```
 .env
 ├── OPENAI_API_KEY=sk-...        # ✅ Protegido
@@ -194,35 +142,11 @@ itemadapter
 
 | Arquivo | Status | Ação |
 |---------|--------|------|
-| `ai_scraper/` | ✅ Novo | Use em produção |
-| `dag_pipeline_real_estate_ai.py` | ✅ Novo | Use em Airflow |
-| `MIGRATION_GUIDE.md` | ✅ Novo | Leia antes |
-| `OPTIMIZATION_GUIDE.md` | ✅ Novo | Consulte para otimização |
-| `scrapy/` | ⚠️ Antigo | Pode remover depois |
-| `dag_pipeline_real_estate.py` | ⚠️ Antigo | Substitua pelo AI versão |
-| `data/web/` | ✅ Igual | Mesma saída JSON |
-| `airflow/dags/pipelines/` | ✅ Igual | Sem mudanças |
-
-## 🔀 Migração de DAGs
-
-### Opção 1: Executar Ambos em Paralelo (Recomendado)
-```python
-# Manter ambos DAGs
-dag_pipeline_real_estate.py           # Scrapy (atual)
-dag_pipeline_real_estate_ai.py        # AI Scraper (novo)
-
-# Comparar resultados por 1-2 semanas
-# Depois desabilitar Scrapy
-```
-
-### Opção 2: Substituição Direta
-```python
-# Apenas DAG novo
-dag_pipeline_real_estate_ai.py        # AI Scraper
-
-# Requer: remover import do Scrapy
-# Risco: perder dados se AI Scraper tiver problemas
-```
+| `ai_scraper/` | ✅ Ativo | Use em produção |
+| `dag_pipeline_real_estate_ai.py` | ✅ Ativo | Use em Airflow |
+| `OPTIMIZATION_GUIDE.md` | ✅ Referência | Consulte para otimização |
+| `data/web/` | ✅ Ativo | Saída JSON |
+| `airflow/dags/pipelines/` | ✅ Ativo | Sem mudanças |
 
 ## 📈 Crescimento do Projeto
 
@@ -297,9 +221,8 @@ Versão 2.0:
 2. **Instalar Dependências** → `pip install -r ai_scraper/requirements.txt`
 3. **Configurar .env** → Adicionar `OPENAI_API_KEY`
 4. **Testar Básico** → `python ai_scraper/main.py --type rentals --max-pages 1`
-5. **Validar Dados** → Comparar com Scrapy
-6. **Integrar Airflow** → Ativar `dag_pipeline_real_estate_ai.py`
-7. **Deprecar Scrapy** → Remover quando tudo estiver OK
+5. **Integrar Airflow** → Ativar `dag_pipeline_real_estate_ai.py`
+6. **Monitorar Dados** → Validar qualidade contínua
 
 ---
 

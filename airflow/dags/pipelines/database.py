@@ -39,8 +39,6 @@ def load():
 
     # Add all rows to properties table in MySQL, using all the relationships added above
 
-    # print([datetime.strptime(item.scraped_at, "%Y-%m-%d %H:%M:%S") for item in df.itertuples()])
-
     properties = [Property(scraped_at=datetime.strptime(item.scraped_at, "%Y-%m-%d %H:%M:%S"),
                            link=item.link,
                            title=item.title,

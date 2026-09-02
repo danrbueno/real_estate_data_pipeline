@@ -1,6 +1,6 @@
 """
-Main scraping script - replaces Scrapy with AI agents
-Usage: python scrap.py --type rentals|sales
+AI web scraping script using OpenAI agents
+Usage: python main.py --type rentals|sales
 """
 
 import argparse

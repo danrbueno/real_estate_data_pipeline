@@ -1,7 +1,6 @@
 """
 DAG for Real Estate Data Pipeline using AI Scraper (OpenAI-powered)
 
-This DAG replaces the original Scrapy-based scraping with AI agents from OpenAI.
 Tasks:
 1. Scrap data from DFImoveis using AI agents
 2. Transform and clean the data

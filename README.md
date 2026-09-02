@@ -1,15 +1,11 @@
 # real_estate_data_pipeline
 
-🤖 **NOW WITH AI!** This Apache Airflow-based project executes a data pipeline every day at 12 AM.
-
-**IMPORTANT:** The Scrapy scraper has been replaced with an **OpenAI-powered AI Scraper** that is smarter, more adaptable, and requires no maintenance!
+🤖 Apache Airflow-based data pipeline using **OpenAI-powered AI Scraper** for intelligent web scraping.
 
 ## ⚡ Quick Links
 
-- 📌 **[START HERE: AI_SCRAPER_README.md](AI_SCRAPER_README.md)** ← Read this first!
-- 🎯 [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) - What was done
-- 📚 [INDEX.md](INDEX.md) - Complete file index
-- 📖 [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - How to migrate from Scrapy
+- 📌 **[AI Scraper](ai_scraper/)** - AI-powered scraping module
+- 📚 [Airflow DAGs](airflow/dags/) - Pipeline orchestration
 
 ## Tasks
 
@@ -25,17 +21,61 @@ This Airflow-based project executes the following tasks every day at 12 AM:
 - https://www.dfimoveis.com.br
 
 ### Scraping Technology
-- **OLD:** Scrapy (CSS selectors) ❌ - Deprecated
-- **NEW:** AI Scraper with OpenAI (semantic extraction) ✅ - Current
+- **AI Scraper with OpenAI** (semantic extraction) ✅
 
-![real_estate_data_pipeline](https://github.com/danrbueno/real_estate_data_pipeline/assets/74033549/a6c3c750-68e9-4b47-ac0c-d691cdbca29b)
+**Architecture:**
+
+```mermaid
+graph LR
+    A["🌐 DFImoveis Website"] -->|"Fetch HTML"| B["📡 HTTPClient<br/>Rate Limited"]
+    B -->|"Raw HTML"| C["🤖 AIScrapingAgent<br/>OpenAI GPT-4"]
+    C -->|"Extract Data"| D["🎯 AIScraper<br/>Orchestrator"]
+    D -->|"Save"| E["📄 JSON Files<br/>rentals.json<br/>sales.json"]
+    E -->|"Transform"| F["🔄 Pandas<br/>Cleaning & Staging"]
+    F -->|"Load"| G["🗄️ MySQL Database"]
+    
+    style A fill:#4A90E2,color:#fff
+    style C fill:#FF6B6B,color:#fff
+    style D fill:#50C878,color:#fff
+    style G fill:#9B59B6,color:#fff
+```
 
 # DAG:
 
 In Airflow, a DAG – or a Directed Acyclic Graph – is a collection of all the tasks you want to run, organized in a way that reflects their relationships and dependencies.
 
-![image](https://github.com/danrbueno/real_estate_data_pipeline/assets/74033549/b11a7c85-c2a8-4498-8f1d-0beb8eb6d1b0)
-Representation of the DAG of this project
+**Complete Data Pipeline DAG:**
+
+```mermaid
+graph TD
+    Start["▶️ START"] --> ScrapeGroup["🤖 SCRAP STAGE"]
+    
+    ScrapeGroup --> ScrapR["Scrap Rentals<br/>AI Agent"]
+    ScrapeGroup --> ScrapS["Scrap Sales<br/>AI Agent"]
+    
+    ScrapR -->|"rentals.json"| TransformGroup["🔄 TRANSFORM STAGE"]
+    ScrapS -->|"sales.json"| TransformGroup
+    
+    TransformGroup --> TransR["Transform Rentals<br/>Pandas Cleanup"]
+    TransformGroup --> TransS["Transform Sales<br/>Pandas Cleanup"]
+    
+    TransR -->|"rentals.csv"| LoadGroup["💾 LOAD STAGE"]
+    TransS -->|"sales.csv"| LoadGroup
+    
+    LoadGroup --> LoadR["Load Rentals<br/>to MySQL"]
+    LoadGroup --> LoadS["Load Sales<br/>to MySQL"]
+    
+    LoadR --> End["✅ COMPLETE"]
+    LoadS --> End
+    
+    style Start fill:#52C41A,color:#fff
+    style End fill:#52C41A,color:#fff
+    style ScrapeGroup fill:#1890FF,color:#fff
+    style TransformGroup fill:#FA8C16,color:#fff
+    style LoadGroup fill:#722ED1,color:#fff
+    style ScrapR fill:#4A90E2,color:#fff
+    style ScrapS fill:#4A90E2,color:#fff
+```
 
 # Airflow configured in a virtual machine
 (https://airflow.apache.org/docs/apache-airflow/stable/start.html#)
@@ -100,5 +140,118 @@ airflow scheduler
 
 In the end, the model in MySQL is:
 
-![model](https://github.com/danrbueno/real_estate_data_pipeline/assets/74033549/9f905960-a2d5-4a5e-ad2e-fe45a7689827)
+```mermaid
+erDiagram
+    CITY ||--o{ NEIGHBORHOOD : has
+    NEIGHBORHOOD ||--o{ PROPERTY : has
+    TRANSACTION_TYPE ||--o{ PROPERTY : has
+    PROPERTY {
+        int id PK
+        string title
+        string link
+        float price
+        float useful_area
+        float m2_value
+        int rooms
+        string description
+        datetime scraped_at
+        int neighborhood_id FK
+        int transaction_type_id FK
+    }
+    NEIGHBORHOOD {
+        int id PK
+        string name
+        int city_id FK
+    }
+    CITY {
+        int id PK
+        string name
+    }
+    TRANSACTION_TYPE {
+        int id PK
+        string name "rentals, sales"
+    }
+```
+
+**Data Flow to Database:**
+
+```mermaid
+graph LR
+    subgraph Scraping["🤖 AI SCRAPER PHASE"]
+        Rentals["Rentals Data<br/>rentals.json"]
+        Sales["Sales Data<br/>sales.json"]
+    end
+    
+    subgraph Processing["🔄 TRANSFORM PHASE"]
+        CleanR["Clean Rentals<br/>Pandas"]
+        CleanS["Clean Sales<br/>Pandas"]
+    end
+    
+    subgraph Database["🗄️ MYSQL PHASE"]
+        PropTable["PROPERTY"]
+        CityTable["CITY"]
+        NeighborTable["NEIGHBORHOOD"]
+        TypeTable["TRANSACTION_TYPE"]
+    end
+    
+    Rentals --> CleanR
+    Sales --> CleanS
+    
+    CleanR --> PropTable
+    CleanS --> PropTable
+    
+    PropTable --> CityTable
+    PropTable --> NeighborTable
+    PropTable --> TypeTable
+    
+    style Scraping fill:#4A90E2,color:#fff
+    style Processing fill:#FA8C16,color:#fff
+    style Database fill:#722ED1,color:#fff
+```
+
+# Project Structure
+
+```
+real_estate_data_pipeline/
+│
+├── 📁 ai_scraper/                    # ⭐ AI-powered scraping module
+│   ├── config.py                     # Configuration & constants
+│   ├── http_client.py                # HTTP client with rate limiting
+│   ├── ai_agent.py                   # OpenAI integration
+│   ├── scraper.py                    # Main orchestrator
+│   ├── main.py                       # CLI entry point
+│   └── requirements.txt              # Dependencies (openai, requests)
+│
+├── 📁 airflow/dags/                  # Pipeline orchestration
+│   ├── dag_pipeline_real_estate_ai.py    # Main DAG with AI Scraper
+│   └── pipelines/                    # Data processing modules
+│       ├── rentals.py                # Rentals transformation
+│       ├── sales.py                  # Sales transformation
+│       ├── database.py               # MySQL loading
+│       └── models/                   # SQLAlchemy models
+│
+├── 📁 data/
+│   ├── web/                          # Scraped JSON files
+│   │   ├── rentals.json              # Raw rentals data
+│   │   └── sales.json                # Raw sales data
+│   └── staging/                      # Cleaned CSV files
+│       ├── rentals.csv               # Staging rentals
+│       └── sales.csv                 # Staging sales
+│
+├── .env.example                      # Environment template
+├── .env                              # API keys (git ignored)
+└── README.md                         # This file
+```
+
+# Key Components
+
+| Component | Purpose | Technology |
+|-----------|---------|------------|
+| **AIScrapingAgent** | Intelligent data extraction | OpenAI GPT-4 |
+| **HTTPClient** | Web requests with rate limiting | Python requests |
+| **AIScraper** | Pipeline orchestration | Python |
+| **Airflow DAG** | Task scheduling & monitoring | Apache Airflow |
+| **Pandas** | Data cleaning & transformation | Python pandas |
+| **SQLAlchemy** | Database ORM & loading | Python SQLAlchemy |
+| **MySQL** | Data persistence | MySQL 8.0+ |
 

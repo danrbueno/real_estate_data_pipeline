@@ -1,6 +1,6 @@
-># 🤖 AI Scraper - Substituição do Scrapy com OpenAI
+># 🤖 AI Scraper - OpenAI-Powered Web Scraping
 
-> **Scrapy foi totalmente substituído por agentes de IA da OpenAI que fazem exatamente o mesmo trabalho, de forma mais inteligente!**
+> **Intelligent web scraping using OpenAI agents for real estate data extraction!**
 
 ## ⚡ Quick Start (2 minutos)
 
@@ -16,31 +16,22 @@ cp .env.example .env
 python ai_scraper/main.py --type rentals
 ```
 
-## 📊 O Que Mudou
+## 📊 Características
 
-### Antes: Scrapy (Seletores CSS)
+### Inteligência Semântica
 ```python
-# Quebra quando site muda de layout
-link = response.css("#resultadoDaBuscaDeImoveis a")
-price = response.css(".price::text")
-```
-
-### Depois: AI Scraper (Compreensão Semântica)
-```python
-# Funciona mesmo com mudanças de layout
+# Compreensão automática de conteúdo
 links = ai_agent.extract_property_links(html)
-price = ai_agent.extract_property_details(html)
+details = ai_agent.extract_property_details(html)
 ```
 
 ## ✨ Vantagens
 
-| Aspecto | Scrapy | AI Scraper |
-|---------|--------|-----------|
-| 🧠 Inteligência | Nenhuma | GPT-4 |
-| 🔧 Manutenção | Alta | Nenhuma |
-| 🌐 Adaptabilidade | Baixa | Alta |
-| 📊 Qualidade | CSS rígida | Semântica |
-| 💰 Custo Mensal | $0 | ~$20 |
+- 🧠 **Inteligência GPT-4**: Compreensão semântica de conteúdo
+- 🌐 **Adaptável**: Funciona mesmo com mudanças de layout
+- 🔧 **Zero Manutenção**: Sem seletores CSS para atualizar
+- 📊 **Alta Qualidade**: Extração inteligente de dados
+- ⚡ **Rápido**: Rate limiting configurável (2s por requisição)
 
 ## 📁 Estrutura Rápida
 
@@ -85,9 +76,9 @@ print(f"Extracted {len(properties)} properties")
 airflow dags test dag_real_estate_data_pipeline_ai 2024-01-01
 ```
 
-## 📊 Saída (100% Compatível)
+## 📊 Saída
 
-Os dados são salvos em JSON (mesma estrutura do Scrapy):
+Os dados são salvos em JSON:
 
 ```json
 {
@@ -106,11 +97,8 @@ Os dados são salvos em JSON (mesma estrutura do Scrapy):
 
 | Arquivo | Descrição |
 |---------|-----------|
-| [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) | 📌 Leia primeiro! Resumo completo |
-| [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) | Guia de migração Scrapy → AI |
 | [ai_scraper/README.md](ai_scraper/README.md) | Documentação técnica do módulo |
 | [OPTIMIZATION_GUIDE.md](OPTIMIZATION_GUIDE.md) | Otimizações e boas práticas |
-| [CODE_COMPARISON.md](CODE_COMPARISON.md) | Comparação Scrapy vs AI |
 | [CHECKLIST.md](CHECKLIST.md) | Checklist de verificação |
 | [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | Estrutura completa do projeto |
 
@@ -131,26 +119,19 @@ cat data/web/rentals.json | head -1
 ### P: Preciso de OpenAI?
 **R:** Sim, mas é barato (~$20/mês)
 
-### P: Scrapy para de funcionar?
-**R:** Não, você pode usar ambos em paralelo
-
 ### P: Como migro o Airflow?
 **R:** Use o novo DAG em `airflow/dags/dag_pipeline_real_estate_ai.py`
 
 ### P: E se o site mudar?
 **R:** AI Scraper se adapta automaticamente
 
-### P: Posso usar Scrapy ainda?
-**R:** Sim, mas AI Scraper é melhor
-
 ## 🎯 Próximos Passos
 
-1. ✅ **Hoje:** Ler este README e [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)
+1. ✅ **Hoje:** Ler este README
 2. ✅ **Hoje:** Instalar dependências e configurar `.env`
 3. ✅ **Hoje:** Executar teste básico
-4. ⏳ **Esta semana:** Comparar com Scrapy
-5. ⏳ **Este mês:** Ativar em Airflow
-6. ⏳ **Depois:** Deprecar Scrapy
+4. ⏳ **Próximos dias:** Executar scraper completo
+5. ⏳ **Depois:** Integrar com Airflow
 
 ## 🆘 Precisa de Ajuda?
 
@@ -184,10 +165,10 @@ Consulte os arquivos de documentação listados acima. Toda implementação est�
 ╔════════════════════════════════════════════════╗
 ║     ✅ IMPLEMENTAÇÃO CONCLUÍDA E TESTADA      ║
 ║                                                ║
-║  Scrapy substituído por AI Scraper             ║
-║  Funcionalidade: 100% compatível               ║
-║  Inteligência: Aumentada                       ║
-║  Manutenção: Reduzida                          ║
+║  AI Scraper OpenAI - Pronto Para Usar          ║
+║  Funcionalidade: 100% operacional              ║
+║  Inteligência: GPT-4                           ║
+║  Manutenção: Automática                        ║
 ║                                                ║
 ║  Status: PRONTO PARA PRODUÇÃO                  ║
 ║  Versão: 1.0.0                                 ║
