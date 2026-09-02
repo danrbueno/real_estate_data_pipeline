@@ -131,6 +131,17 @@ def test_http_client_returns_none_for_request_errors(monkeypatch, capsys):
     assert "Error fetching https://example.test" in capsys.readouterr().out
 
 
+def test_http_client_returns_none_for_bad_status(monkeypatch, capsys):
+    fake_response = FakeResponse(error=requests.HTTPError("404 Client Error"))
+    fake_session = FakeSession(fake_response)
+    monkeypatch.setattr(http_client.requests, "Session", lambda: fake_session)
+    monkeypatch.setattr(http_client.time, "time", lambda: 10)
+    client = http_client.HTTPClient(delay=0)
+
+    assert client.get("https://example.test") is None
+    assert "Error fetching https://example.test" in capsys.readouterr().out
+
+
 def test_agent_parses_json_and_optional_response_format(monkeypatch):
     agent, client = make_agent(monkeypatch, '{"links": ["one"]}')
 
