@@ -1,15 +1,32 @@
 # real_estate_data_pipeline
 
-This Apache Airflow's based project executes a data pipeline every day at 12 AM with the following tasks:
+🤖 **NOW WITH AI!** This Apache Airflow-based project executes a data pipeline every day at 12 AM.
 
-1. Scrap data from Brasília, Brazil real estate rentals and sales websites, using AI.
-2. Save scraped data into JSON files, separating them by rentals or sales data.
+**IMPORTANT:** The Scrapy scraper has been replaced with an **OpenAI-powered AI Scraper** that is smarter, more adaptable, and requires no maintenance!
+
+## ⚡ Quick Links
+
+- 📌 **[START HERE: AI_SCRAPER_README.md](AI_SCRAPER_README.md)** ← Read this first!
+- 🎯 [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) - What was done
+- 📚 [INDEX.md](INDEX.md) - Complete file index
+- 📖 [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - How to migrate from Scrapy
+
+## Tasks
+
+This Airflow-based project executes the following tasks every day at 12 AM:
+
+1. **Scrap data** from Brasília, Brazil real estate rentals and sales websites, **using AI agents (OpenAI)** 🤖
+2. Save scraped data into JSON files, separating them by rentals or sales data
 3. Clean the scraped data, using Pandas
 4. Save clean data into CSV files for staging
 5. Load data into MySQL tables, using SQLAlchemy
 
-Website scraped in this project:
+### Website Scraped
 - https://www.dfimoveis.com.br
+
+### Scraping Technology
+- **OLD:** Scrapy (CSS selectors) ❌ - Deprecated
+- **NEW:** AI Scraper with OpenAI (semantic extraction) ✅ - Current
 
 ![real_estate_data_pipeline](https://github.com/danrbueno/real_estate_data_pipeline/assets/74033549/a6c3c750-68e9-4b47-ac0c-d691cdbca29b)
 
