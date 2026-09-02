@@ -1,78 +1,78 @@
 # Update Notes
 
-## Escopo
+## Scope
 
-Este documento registra as alteracoes realizadas desde a criacao da branch `feature/scrapy-to-ai`, a partir do commit-base `0f299fb`.
+This document records changes made since the creation of the `feature/scrapy-to-ai` branch, starting from commit base `0f299fb`.
 
-A branch possui seis commits de implementacao. Tambem ha alteracoes locais ainda nao commitadas, identificadas nesta nota como **Em andamento**.
+The branch contains six implementation commits. It also includes uncommitted local changes, identified in these notes as **In Progress**.
 
-## Mudanca Principal: Scrapy para AI Scraper
+## Main Change: Scrapy to AI Scraper
 
-- O mecanismo de coleta baseado em Scrapy foi removido.
-- O pipeline passou a usar o modulo `ai_scraper`, baseado em OpenAI, para coletar paginas de imoveis do DFImoveis.
-- Foi adicionada a DAG `dag_real_estate_data_pipeline_ai`, que executa a coleta de aluguel e venda e segue para transformacao, consolidacao e carga no banco.
-- A coleta usa um cliente HTTP com rate limiting, tratamento de falhas e salvamento das paginas HTML brutas.
-- O agente de IA extrai links, informacoes de paginacao e detalhes de imoveis a partir de HTML.
+- The Scrapy-based data collection mechanism was removed.
+- The pipeline now uses the OpenAI-based `ai_scraper` module to collect DFImoveis real-estate pages.
+- The `dag_real_estate_data_pipeline_ai` DAG was added to collect rental and sale data before transformation, consolidation, and database loading.
+- Collection uses an HTTP client with rate limiting, failure handling, and raw HTML page persistence.
+- The AI agent extracts property links, pagination details, and property details from HTML.
 
-## Estrutura e Configuracao
+## Structure and Configuration
 
-- O codigo da aplicacao foi organizado sob `app/`:
-  - `app/ai_scraper/`: cliente HTTP, agente OpenAI, configuracao, orquestrador e CLI.
-  - `app/airflow/dags/`: DAG e modulos do pipeline de dados.
-  - `app/tests/`: testes automatizados.
-- Foi criado `config/requirements.txt` para as dependencias da aplicacao e dos testes.
-- O OpenAI foi restringido a `>=1.3.0,<2.0.0`, compativel com a API utilizada pelo codigo.
-- O Pydantic foi restringido a `>=1.10.0,<2.0.0`, compativel com o Apache Airflow 2.6.3 documentado no projeto.
-- O template de variaveis de ambiente foi movido para `config/.env.example`.
-- Arquivos de dados gerados, paginas coletadas e bytecode Python foram removidos do controle de versao.
+- Application code was organized under `app/`:
+  - `app/ai_scraper/`: HTTP client, OpenAI agent, configuration, orchestrator, and CLI.
+  - `app/airflow/dags/`: Airflow DAG and data-pipeline modules.
+  - `app/tests/`: automated tests.
+- `config/requirements.txt` was created for application and test dependencies.
+- OpenAI is constrained to `>=1.3.0,<2.0.0`, matching the client API used by the code.
+- Pydantic is constrained to `>=1.10.0,<2.0.0`, matching the Apache Airflow 2.6.3 version documented by the project.
+- The environment-variable template was moved to `config/.env.example`.
+- Generated data files, scraped pages, and Python bytecode were removed from version control.
 
-## Qualidade e Testes
+## Quality and Testing
 
-- Foi criada uma suite deterministica para o AI Scraper em `app/tests/test_ai_scraper.py`.
-- Os testes cobrem:
-  - requisicoes HTTP, rate limiting e erros de rede;
-  - parsing de respostas OpenAI, incluindo JSON, blocos Markdown, respostas invalidas e excecoes;
-  - validacao de dados extraidos;
-  - contagem e persistencia de paginas HTML;
-  - condicoes de parada da paginacao;
-  - resultados e codigos de saida da CLI.
-- A configuracao do pytest esta em `app/pytest.ini`.
-- A configuracao de cobertura esta em `app/.coveragerc`, com cobertura de ramos e minimo de 100% para `app.ai_scraper`.
-- O comando de validacao atual e:
+- A deterministic AI Scraper test suite was added at `app/tests/test_ai_scraper.py`.
+- Tests cover:
+  - HTTP requests, rate limiting, and network errors;
+  - OpenAI response parsing, including JSON, Markdown blocks, invalid responses, and exceptions;
+  - extracted-data validation;
+  - HTML page counting and persistence;
+  - pagination stop conditions;
+  - CLI results and exit codes.
+- Pytest configuration is located at `app/pytest.ini`.
+- Coverage configuration is located at `app/.coveragerc`, with branch coverage and a 100% minimum for `app.ai_scraper`.
+- Current validation command:
 
 ```powershell
 python -m pytest -c app/pytest.ini
 ```
 
-- Resultado local mais recente: 17 testes aprovados e 100.00% de cobertura de ramos para `app.ai_scraper`.
+- Latest local result: 17 passing tests and 100.00% branch coverage for `app.ai_scraper`.
 
-## CI e Release
+## CI and Release
 
-- Foi criada a workflow `.github/workflows/release-quality.yml`.
-- A workflow instala as dependencias e executa `python -m pytest -c app/pytest.ini` em pull requests e pushes para `main`.
-- Foi criado o skill `.github/skills/deploy-full-coverage/SKILL.md`, que define o fluxo de cobertura total e validacao de release.
-- Foi criado o agente `.github/agents/release-manager.agent.md`, que aplica o skill, produz decisao de release e exige aprovacao explicita antes de qualquer deploy de producao.
+- The `.github/workflows/release-quality.yml` workflow was added.
+- The workflow installs dependencies and runs `python -m pytest -c app/pytest.ini` for pull requests and pushes to `main`.
+- The `.github/skills/deploy-full-coverage/SKILL.md` skill was added to define the full-coverage and release-validation workflow.
+- The `.github/agents/release-manager.agent.md` agent was added to apply the skill, issue release decisions, and require explicit approval before a production deployment.
 
-## Documentacao
+## Documentation
 
-- O README principal foi atualizado para refletir a arquitetura baseada em AI Scraper.
-- Foram adicionados guias de arquitetura, inicio rapido, estrutura do projeto, otimizacao e checklist em `docs/`.
-- Referencias historicas ao Scrapy foram removidas da documentacao e dos comentarios ativos.
+- The root README was updated to reflect the AI Scraper architecture.
+- Architecture, quick-start, project-structure, optimization, and checklist guides were added under `docs/`.
+- Historical Scrapy references were removed from active documentation and code comments.
 
-## Em Andamento e Limitacoes
+## In Progress and Limitations
 
-- A cobertura de 100% atualmente se aplica somente a `app.ai_scraper`.
-- A DAG do Airflow, as transformacoes Pandas e os modulos ORM em `app/airflow/` ainda precisam de testes deterministas antes que a cobertura total do pipeline possa ser exigida.
-- O repositorio ainda nao define alvo de producao, comando de deploy, mecanismo de secrets, monitoramento ou procedimento de rollback. Portanto, nao ha autorizacao nem condicoes completas para deploy de producao.
-- O teste da CLI emite um aviso nao bloqueante do `runpy`; todos os testes e o gate de cobertura passam.
+- The 100% coverage requirement currently applies only to `app.ai_scraper`.
+- The Airflow DAG, Pandas transformations, and ORM modules under `app/airflow/` still require deterministic tests before full pipeline coverage can be enforced.
+- The repository does not yet define a production target, deployment command, secret-management mechanism, monitoring, or rollback procedure. Production deployment is therefore neither authorized nor fully specified.
+- The CLI test emits a non-blocking `runpy` warning; all tests and the coverage gate pass.
 
-## Historico de Commits da Branch
+## Branch Commit History
 
-| Commit | Descricao |
+| Commit | Description |
 | --- | --- |
-| `3d7fbb9` | Atualiza o README para o uso de IA na coleta de dados. |
-| `c69a0f0` | Corrige a formatacao do nome da workflow de testes e pull request. |
-| `f7ca7a2` | Adiciona exemplo de uso e testes iniciais do AI Scraper. |
-| `f358151` | Adiciona o modulo AI Scraper e documentacao abrangente. |
-| `fb066c8` | Implementa o scraper baseado em IA e a DAG Airflow correspondente. |
-| `04bd746` | Adiciona teste para o tratamento de erro HTTP no cliente. |
+| `3d7fbb9` | Update the README to reflect AI-based data collection. |
+| `c69a0f0` | Correct workflow-name formatting for tests and pull requests. |
+| `f7ca7a2` | Add AI Scraper usage examples and initial tests. |
+| `f358151` | Add the AI Scraper module and comprehensive documentation. |
+| `fb066c8` | Implement the AI-based scraper and its corresponding Airflow DAG. |
+| `04bd746` | Add a test for HTTP error handling in the client. |
