@@ -4,7 +4,7 @@ import json
 from typing import Optional, List, Dict, Any
 import datetime
 from openai import OpenAI
-from app.ai_scraper.config import OPENAI_API_KEY, OPENAI_MODEL
+from config import OPENAI_API_KEY, OPENAI_MODEL
 
 
 class AIScrapingAgent:
@@ -183,6 +183,50 @@ HTML:
 {html[:8000]}...
 """
         
+        result = self._call_openai(prompt)
+        return result
+
+    def extract_property_page_details(self, html: str, property_url: str) -> Dict[str, Any]:
+        """
+        Extract listing data from a property's own detail page
+
+        Args:
+            html: HTML content of the property detail page (the page behind the ad's link)
+            property_url: URL of the property page
+
+        Returns:
+            Dict with the property fields extracted from the page
+        """
+        prompt = f"""
+Extract real estate listing information from this property page. Return ONLY a JSON object with this exact format:
+{{
+    "link": "{property_url}",
+    "title": "...",
+    "price": "R$ 4.400",
+    "useful_area": "35 m²",
+    "price_per_sqm": "R$ 125",
+    "bedrooms": "1",
+    "suites": "1",
+    "parking_spaces": "1",
+    "condo_fee": "R$ 500",
+    "total_area": "40 m²",
+    "iptu": "R$ 100",
+    "floor": "3º andar",
+    "neighborhood": "Noroeste"
+}}
+
+Instructions:
+- "price" is the sale or rental value shown on the page, whichever applies
+- Look for values in dedicated fields/tables/icons, and also inside free-text descriptions
+  (e.g. "3º andar", "Condomínio R$ ...", "IPTU R$ ...", "Vaga de garagem")
+- Extract values exactly as shown in the HTML (keep currency symbols/units)
+- If a field cannot be found, set its value to null
+- Return only valid JSON, no other text
+
+HTML:
+{html[:12000]}
+"""
+
         result = self._call_openai(prompt)
         return result
 

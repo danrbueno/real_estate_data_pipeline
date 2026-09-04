@@ -40,7 +40,7 @@ python ai_scraper/main.py --type rentals  # Todas as páginas
 ### 4. Implementar Cache
 
 ```python
-# Em ai_scraper/scraper.py
+# Em ai_scraper/main_pages_downloader/main_pages_downloader.py
 import hashlib
 
 class AIScraper:
@@ -63,7 +63,7 @@ class AIScraper:
 ### 1. Logging Estruturado
 
 ```python
-# Em ai_scraper/scraper.py
+# Em ai_scraper/main_pages_downloader/main_pages_downloader.py
 import logging
 
 logging.basicConfig(
@@ -194,7 +194,7 @@ task_notify_completion = SlackWebhookOperator(
 # ai_scraper/config.py
 DEBUG = True
 
-# Use em ai_scraper/scraper.py
+# Use em ai_scraper/main_pages_downloader/main_pages_downloader.py
 if DEBUG:
     print(f"Fetching: {url}")
     print(f"HTML length: {len(html)}")
