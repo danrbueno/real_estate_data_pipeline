@@ -7,7 +7,7 @@
 - [x] `ai_scraper/config.py` - Configurações e constantes
 - [x] `ai_scraper/http_client.py` - Cliente HTTP com rate limiting
 - [x] `ai_scraper/ai_agent.py` - Agente OpenAI para extração
-- [x] `ai_scraper/scraper.py` - Orquestrador principal
+- [x] `ai_scraper/main_pages_downloader/main_pages_downloader.py` - Orquestrador principal
 - [x] `ai_scraper/main.py` - CLI entry point
 - [x] `ai_scraper/README.md` - Documentação técnica
 - [x] `ai_scraper/requirements.txt` - Dependências Python

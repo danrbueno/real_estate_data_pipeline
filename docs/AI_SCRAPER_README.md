@@ -13,7 +13,7 @@ cp .env.example .env
 # Editar .env: OPENAI_API_KEY=sk-...
 
 # 3. Executar!
-python ai_scraper/main.py --type rentals
+python -m app.ai_scraper.main_pages_downloader.main --type rentals
 ```
 
 ## 📊 Características
@@ -37,9 +37,14 @@ details = ai_agent.extract_property_details(html)
 
 ```
 ai_scraper/              ⭐ NOVO: Módulo de IA
-├── main.py             # CLI: python ai_scraper/main.py
+├── main_pages_downloader/
+│   ├── main.py         # CLI do downloader de páginas de listagem
+│   └── main_pages_downloader.py # Downloader de paginação
+├── property_pages_downloader/
+│   ├── main.py         # CLI do downloader de anúncios
+│   └── property_pages_downloader.py
 ├── ai_agent.py         # Agente OpenAI
-└── scraper.py          # Orquestrador
+└── main_pages_downloader.py # Orquestrador
 
 airflow/dags/
 └── dag_pipeline_real_estate_ai.py  ⭐ NOVO: DAG com IA
@@ -50,13 +55,13 @@ airflow/dags/
 ### 1. **Linha de Comando**
 ```bash
 # Scrape rentals
-python ai_scraper/main.py --type rentals
+python -m app.ai_scraper.main_pages_downloader.main --type rentals
 
 # Scrape sales
-python ai_scraper/main.py --type sales
+python -m app.ai_scraper.main_pages_downloader.main --type sales
 
 # Limitar a 3 páginas
-python ai_scraper/main.py --type rentals --max-pages 3
+python -m app.ai_scraper.main_pages_downloader.main --type rentals --max-pages 3
 ```
 
 ### 2. **Com Python**

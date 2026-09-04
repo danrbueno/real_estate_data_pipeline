@@ -39,13 +39,13 @@ OPENAI_MODEL=gpt-4-turbo
 
 ```bash
 # Scrape rentals
-python ai_scraper/main.py --type rentals
+python -m app.ai_scraper.main_pages_downloader.main --type rentals
 
 # Scrape sales
-python ai_scraper/main.py --type sales
+python -m app.ai_scraper.main_pages_downloader.main --type sales
 
 # Com limite de páginas
-python ai_scraper/main.py --type rentals --max-pages 5
+python -m app.ai_scraper.main_pages_downloader.main --type rentals --max-pages 5
 ```
 
 ### Em Código Python
@@ -58,6 +58,17 @@ properties = scraper.scrape_transaction_type("rentals")
 scraper.close()
 
 print(f"Extracted {len(properties)} properties")
+```
+
+### Download dos detalhes dos anúncios
+
+O segundo agente lê os HTMLs de listagem já salvos, encontra os links dos anúncios,
+baixa cada página de detalhe e salva o HTML em
+`data/raw/<tipo>/properties/`. Ele não chama a OpenAI nem extrai JSON nessa etapa.
+
+```bash
+python -m app.ai_scraper.property_pages_downloader.main --type rentals
+python -m app.ai_scraper.property_pages_downloader.main --type sales --max-pages 5
 ```
 
 ### Com Airflow (DAG)
@@ -103,13 +114,10 @@ Os dados são salvos em JSON (mesma estrutura do Scrapy):
 1. **Fetch da Página**: Baixa HTML da página de listagem
 2. **Extração de Links**: IA identifica todos os links de imóveis
 3. **Paginação**: IA compreende estrutura de pagination e navega automaticamente
-4. **Detalhes do Imóvel**: Para cada imóvel, IA extrai:
-   - Título e preço
-   - Características (quartos, banheiros, área, etc.)
-   - Localização e bairro
-   - Descrição e amenidades
-   - Todos os outros dados visíveis
-5. **Salvamento**: Dados salvos em JSON, um item por linha
+4. **Detalhes do Imóvel**: Para cada imóvel, o segundo agente baixa o HTML da página
+  do anúncio e salva o arquivo localmente para processamento posterior.
+5. **Salvamento**: As páginas de listagem ficam em `data/raw/<tipo>/pages/` e as
+  páginas dos anúncios em `data/raw/<tipo>/properties/`.
 
 ## 📝 Arquitetura
 
@@ -119,7 +127,7 @@ ai_scraper/
 ├── config.py             # Configuration and constants
 ├── http_client.py        # HTTP requests with rate limiting
 ├── ai_agent.py           # OpenAI AI agent for data extraction
-├── scraper.py            # Main orchestrator
+├── main_pages_downloader.py # Main orchestrator
 ├── main.py               # CLI entry point
 ```
 

@@ -3,7 +3,7 @@
 import requests
 from typing import Optional
 import time
-from app.ai_scraper.config import REQUEST_TIMEOUT, REQUEST_DELAY
+from config import REQUEST_TIMEOUT, REQUEST_DELAY
 
 
 class HTTPClient:
