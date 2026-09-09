@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: real_estate_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_SCHEMA}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - real_estate_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_SCHEMA}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  real_estate_postgres_data:

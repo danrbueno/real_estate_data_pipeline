@@ -1,21 +1,23 @@
-"""Orchestrator for downloading paginated listing pages as HTML."""
+"""Orchestrator for downloading paginated listing pages into Postgres."""
 
-import os
 import re
-from pathlib import Path
 from typing import List
 
-from config import DFIMOVEIS_SEARCH_URL, MAX_PAGES, RAW_DATA_DIR, TRANSACTION_TYPES
+from config import DFIMOVEIS_SEARCH_URL, MAX_PAGES, TRANSACTION_TYPES
+from db import Base, engine, Session
 from http_client import HTTPClient
+from models import MainPage
 
 
 class AIScraper:
-    """Web scraper that saves pagination pages as HTML."""
+    """Web scraper that saves pagination pages to the tb_main_pages table."""
 
     def __init__(self):
         self.http_client = HTTPClient()
         self.transaction_type = None
-        self.raw_data_dir = None
+        # Reset tb_main_pages on every run so it only holds the latest scrape.
+        Base.metadata.drop_all(engine)
+        Base.metadata.create_all(engine)
 
     @staticmethod
     def count_properties_in_html(html: str) -> int:
@@ -24,26 +26,27 @@ class AIScraper:
         matches = re.findall(pattern, html)
         return len(set(matches))
 
-    def save_page_html(self, page: int, html: str) -> Path:
-        """Save page HTML to file."""
-        output_dir = Path(self.raw_data_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
-        file_path = output_dir / f"page_{page:03d}.html"
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(html)
-        return file_path
+    def save_page_html(self, page: int, url: str, html: str) -> int:
+        """Save page HTML to the tb_main_pages table, returning the row id."""
+        session = Session()
+        try:
+            record = MainPage(page=page, url=url, html_content=html)
+            session.add(record)
+            session.commit()
+            return record.id
+        finally:
+            session.close()
 
-    def scrape_transaction_type(self, transaction_type: str) -> List[str]:
+    def scrape_transaction_type(self, transaction_type: str) -> List[int]:
         """Scrape and save all pagination pages for a transaction type."""
         self.transaction_type = transaction_type
         url_type = TRANSACTION_TYPES[transaction_type]
-        self.raw_data_dir = os.path.join(RAW_DATA_DIR, transaction_type, "pages")
 
         saved_pages = []
         current_page = 1
         total_properties = 0
         print(f"\n🤖 Starting AI scraping for {transaction_type}...")
-        print(f"📁 Output directory: {self.raw_data_dir}\n")
+        print("🗄️  Saving pages to Postgres table: tb_main_pages\n")
 
         while True:
             if MAX_PAGES and current_page > MAX_PAGES:
@@ -57,10 +60,10 @@ class AIScraper:
                 print("❌ Fetch failed")
                 break
 
-            file_path = self.save_page_html(current_page, html)
-            saved_pages.append(str(file_path))
+            row_id = self.save_page_html(current_page, url, html)
+            saved_pages.append(row_id)
             property_count = self.count_properties_in_html(html)
-            print(f"Saved → {property_count} properties")
+            print(f"Saved (id={row_id}) → {property_count} properties")
 
             if property_count == 0:
                 print("\n✅ Reached end of pagination")
@@ -74,7 +77,7 @@ class AIScraper:
         print("📊 Scraping Summary:")
         print(f"  Total pages fetched: {current_page - 1}")
         print(f"  Total properties found: {total_properties}")
-        print(f"  Output directory: {self.raw_data_dir}")
+        print("  Table: tb_main_pages")
         print(f"  Pages saved: {len(saved_pages)}")
         print(f"{'='*60}\n")
         return saved_pages

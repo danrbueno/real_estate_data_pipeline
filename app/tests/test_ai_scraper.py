@@ -72,6 +72,26 @@ class FakeHTTPClient:
         self.closed = True
 
 
+class FakeDBSession:
+    """Stand-in for a SQLAlchemy session that assigns incrementing ids."""
+
+    _next_id = 0
+
+    def __init__(self):
+        self.added = []
+
+    def add(self, record):
+        FakeDBSession._next_id += 1
+        record.id = FakeDBSession._next_id
+        self.added.append(record)
+
+    def commit(self):
+        pass
+
+    def close(self):
+        pass
+
+
 def make_agent(monkeypatch, content=None, error=None):
     fake_client = FakeOpenAI(content=content, error=error)
     monkeypatch.setattr(ai_agent, "OpenAI", lambda api_key: fake_client)
@@ -204,45 +224,44 @@ def test_agent_builds_extraction_prompts_and_validates(monkeypatch):
     assert not agent.validate_extraction({"title": "Home"})
 
 
-def test_count_properties_and_save_page(tmp_path):
+def test_count_properties_and_save_page(monkeypatch):
+    monkeypatch.setattr(main_pages_downloader, "Session", lambda: FakeDBSession())
     instance = main_pages_downloader.AIScraper.__new__(main_pages_downloader.AIScraper)
-    instance.raw_data_dir = str(tmp_path / "pages")
 
     assert instance.count_properties_in_html('data-id="1" data-id="2" data-id="1"') == 2
     assert instance.count_properties_in_html("<html></html>") == 0
-    saved = instance.save_page_html(2, "<html>saved</html>")
-    assert saved.name == "page_002.html"
-    assert saved.read_text(encoding="utf-8") == "<html>saved</html>"
+    row_id = instance.save_page_html(2, "https://example.test?pagina=2", "<html>saved</html>")
+    assert isinstance(row_id, int)
 
 
 def test_scraper_constructor(monkeypatch):
     client = FakeHTTPClient([])
     monkeypatch.setattr(main_pages_downloader, "HTTPClient", lambda: client)
+    monkeypatch.setattr(main_pages_downloader.Base.metadata, "drop_all", lambda bind: None)
+    monkeypatch.setattr(main_pages_downloader.Base.metadata, "create_all", lambda bind: None)
 
     instance = main_pages_downloader.AIScraper()
 
     assert instance.http_client is client
     assert instance.transaction_type is None
-    assert instance.raw_data_dir is None
 
 
-def test_scraper_saves_pages_and_stops_at_empty_page(monkeypatch, tmp_path):
+def test_scraper_saves_pages_and_stops_at_empty_page(monkeypatch):
+    monkeypatch.setattr(main_pages_downloader, "Session", lambda: FakeDBSession())
     instance = main_pages_downloader.AIScraper.__new__(main_pages_downloader.AIScraper)
     instance.http_client = FakeHTTPClient(['data-id="1"', "<html></html>"])
-    monkeypatch.setattr(main_pages_downloader, "RAW_DATA_DIR", str(tmp_path))
     monkeypatch.setattr(main_pages_downloader, "MAX_PAGES", None)
 
     pages = instance.scrape_transaction_type("rentals")
 
     assert len(pages) == 2
-    assert Path(pages[0]).exists()
     assert instance.http_client.urls[0].endswith("/aluguel/df/todos/apartamento?pagina=1")
 
 
-def test_scraper_stops_on_fetch_failure_and_max_pages(monkeypatch, tmp_path):
+def test_scraper_stops_on_fetch_failure_and_max_pages(monkeypatch):
+    monkeypatch.setattr(main_pages_downloader, "Session", lambda: FakeDBSession())
     failed = main_pages_downloader.AIScraper.__new__(main_pages_downloader.AIScraper)
     failed.http_client = FakeHTTPClient([None])
-    monkeypatch.setattr(main_pages_downloader, "RAW_DATA_DIR", str(tmp_path))
     monkeypatch.setattr(main_pages_downloader, "MAX_PAGES", None)
     assert failed.scrape_transaction_type("sales") == []
 
