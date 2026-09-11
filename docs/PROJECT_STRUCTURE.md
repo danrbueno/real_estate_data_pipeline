@@ -112,10 +112,7 @@ Pipeline Existente
 ### AI Scraper (`requirements.txt`)
 ```
 openai>=1.3.0          # API OpenAI
-requests>=2.31.0       # HTTP requests
 python-dotenv>=1.0.0   # Variáveis de ambiente
-beautifulsoup4>=4.12.0 # Optional: fallback HTML parsing
-lxml>=4.9.0            # Optional: HTML parsing
 ```
 
 ### Airflow (existente)

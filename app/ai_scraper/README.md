@@ -1,21 +1,26 @@
-# AI Scraper - OpenAI Powered Web Scraping
+# AI Scraper - Web Scraping para DFImoveis
 
-Substitui o Scrapy tradicional por agentes de IA da OpenAI para extrair dados de imóveis do site DFImoveis.
+Pipeline de coleta de imóveis do site DFImoveis, dividido em duas etapas
+determinísticas (sem chamadas à OpenAI) e reservando o agente de IA (`ai_agent.py`)
+para uma etapa futura de extração estruturada dos campos de cada anúncio.
 
-## ✨ Vantagens sobre Scrapy
+## ✨ Por que HTTP + regex em vez de IA para o crawling?
 
-- **Inteligência Adaptativa**: Agentes de IA entendem conteúdo dinâmico e layouts variados
-- **Melhor Extração**: Compreensão semântica dos dados em vez de parsing CSS rígido
-- **Sem Manutenção de Seletores**: Não precisa atualizar seletores CSS quando o site muda
-- **Escalável**: Facilmente adaptável para novos sites sem reconfigurações
-- **Inteligência de Paginação**: Compreende automaticamente estrutura de paginação
+- **Determinístico e completo**: baixar o HTML real e extrair links com regex garante
+  que TODOS os anúncios da página sejam encontrados, sem risco de alucinação
+- **Sem custo de tokens**: nenhuma chamada à OpenAI é feita para navegar páginas ou
+  contar anúncios
+- **Simples de depurar**: falhas de rede/parsing são explícitas, ao contrário de uma
+  IA que pode "inventar" ou perder resultados silenciosamente
+- **IA reservada para o que ela faz bem**: extrair campos semiestruturados de uma
+  página de detalhe (preço, área, quartos etc.), não para enumerar links
 
 ## 🔧 Instalação
 
 ### 1. Instalar Dependências
 
 ```bash
-pip install -r ai_scraper/requirements.txt
+pip install -r config/requirements.txt
 ```
 
 ### 2. Configurar OpenAI API Key
@@ -54,17 +59,27 @@ python -m app.ai_scraper.main_pages_downloader.main --type rentals --max-pages 5
 from ai_scraper import AIScraper
 
 scraper = AIScraper()
-properties = scraper.scrape_transaction_type("rentals")
+pages = scraper.scrape_transaction_type("rentals")
 scraper.close()
 
-print(f"Extracted {len(properties)} properties")
+total_links = sum(len(page["links"]) for page in pages)
+print(f"Extracted {total_links} ad links across {len(pages)} pages")
+```
+
+O primeiro agente (`main_pages_downloader`) baixa o HTML de cada página de listagem
+via `HTTPClient` (sem IA) e extrai, via regex, os links dos anúncios (sem salvar o
+HTML). O resultado é gravado em `data/raw/<tipo>/links.json`, no formato:
+
+```json
+[
+  {"page": 1, "links": ["https://www.dfimoveis.com.br/imovel/...", "..."]}
+]
 ```
 
 ### Download dos detalhes dos anúncios
 
-O segundo agente lê os HTMLs de listagem já salvos, encontra os links dos anúncios,
-baixa cada página de detalhe e salva o HTML em
-`data/raw/<tipo>/properties/`. Ele não chama a OpenAI nem extrai JSON nessa etapa.
+O segundo agente lê os links salvos, baixa cada página de detalhe (também via
+`HTTPClient`, sem IA) e salva o HTML em `data/raw/<tipo>/properties/`.
 
 ```bash
 python -m app.ai_scraper.property_pages_downloader.main --type rentals
@@ -78,57 +93,53 @@ from ai_scraper import AIScraper
 
 def scrape_rentals():
     scraper = AIScraper()
-    properties = scraper.scrape_transaction_type("rentals")
+    pages = scraper.scrape_transaction_type("rentals")
     scraper.close()
-    return len(properties)
+    return sum(len(page["links"]) for page in pages)
 
 def scrape_sales():
     scraper = AIScraper()
-    properties = scraper.scrape_transaction_type("sales")
+    pages = scraper.scrape_transaction_type("sales")
     scraper.close()
-    return len(properties)
+    return sum(len(page["links"]) for page in pages)
 ```
 
 ## 📊 Estrutura de Saída
 
-Os dados são salvos em JSON (mesma estrutura do Scrapy):
+- `data/raw/<tipo>/links.json` — links de anúncios por página (ver formato acima)
+- `data/raw/<tipo>/properties/*.html` — HTML bruto de cada página de anúncio,
+  pronto para uma etapa futura de extração de campos
 
-**`data/web/rentals.json`** e **`data/web/sales.json`**
-
-```json
-{
-  "title": "Apartamento 2 quartos em Brasília",
-  "link": "https://www.dfimoveis.com.br/...",
-  "price": "R$ 250.000",
-  "bedrooms": "2",
-  "bathrooms": "1",
-  "area": "80 m²",
-  "neighborhood": "Asa Sul",
-  "scraped_at": "2024-01-15 10:30:45",
-  "other_features": {...}
-}
-```
+A extração de campos estruturados (preço, quartos, área etc.) a partir do HTML de
+cada anúncio ainda depende do agente de IA (`AIScrapingAgent.extract_property_page_details`
+em `ai_agent.py`), mas essa etapa ainda não está conectada a um script de linha de
+comando — é usada apenas diretamente via código/testes por enquanto.
 
 ## 🤖 Como Funciona
 
-1. **Fetch da Página**: Baixa HTML da página de listagem
-2. **Extração de Links**: IA identifica todos os links de imóveis
-3. **Paginação**: IA compreende estrutura de pagination e navega automaticamente
-4. **Detalhes do Imóvel**: Para cada imóvel, o segundo agente baixa o HTML da página
-  do anúncio e salva o arquivo localmente para processamento posterior.
-5. **Salvamento**: As páginas de listagem ficam em `data/raw/<tipo>/pages/` e as
-  páginas dos anúncios em `data/raw/<tipo>/properties/`.
+1. **Fetch da Página**: `main_pages_downloader` baixa o HTML da página de listagem
+   via HTTP puro (sem salvar o arquivo, sem chamar a OpenAI)
+2. **Extração de Links**: Um regex extrai os links dos anúncios diretamente do HTML
+3. **Paginação**: Navega para a próxima página até encontrar uma sem anúncios
+4. **Detalhes do Imóvel**: `property_pages_downloader` baixa o HTML de cada anúncio
+   (via HTTP puro) e salva o arquivo localmente para processamento posterior
+5. **Salvamento**: Os links de cada página ficam em `data/raw/<tipo>/links.json` e as
+   páginas dos anúncios em `data/raw/<tipo>/properties/`
 
 ## 📝 Arquitetura
 
 ```
 ai_scraper/
-├── __init__.py           # Package initialization
-├── config.py             # Configuration and constants
-├── http_client.py        # HTTP requests with rate limiting
-├── ai_agent.py           # OpenAI AI agent for data extraction
-├── main_pages_downloader.py # Main orchestrator
-├── main.py               # CLI entry point
+├── __init__.py                       # Package initialization
+├── config.py                         # Configuration and constants
+├── http_client.py                    # HTTP requests with rate limiting
+├── ai_agent.py                       # OpenAI agent (reserved for detail-field extraction)
+├── main_pages_downloader/
+│   ├── main_pages_downloader.py      # Fetch listing pages + extract ad links (regex)
+│   └── main.py                       # CLI entry point
+└── property_pages_downloader/
+    ├── property_pages_downloader.py  # Download each ad's detail page HTML
+    └── main.py                       # CLI entry point
 ```
 
 ## ⚙️ Configuração Avançada
@@ -151,34 +162,35 @@ MAX_PAGES = None
 
 ## 🔒 Segurança
 
-- API key armazenada em `.env` (nunca commitado)
-- Rate limiting automático
+- API key da OpenAI (quando usada para extração de campos) armazenada em `.env`
+  (nunca commitado)
+- Rate limiting automático nas requisições HTTP
 - User-Agent configurado
 - Tratamento de erros robusto
 
 ## 💡 Próximos Passos
 
-1. Integrar com DAG do Airflow
-2. Adicionar suporte para mais sites
-3. Implementar cache de resultados
-4. Adicionar logging estruturado
-5. Testes automatizados
+1. Conectar `AIScrapingAgent.extract_property_page_details` a um script de linha de
+   comando que leia `data/raw/<tipo>/properties/*.html` e grave os campos extraídos
+2. Integrar com DAG do Airflow
+3. Adicionar suporte para mais sites
+4. Implementar cache de resultados
+5. Adicionar logging estruturado
 
 ## 🐛 Troubleshooting
 
 ### "Error: OPENAI_API_KEY not found"
+- Só é necessário se você for usar `AIScrapingAgent` para extrair campos de uma
+  página de detalhe; não afeta `main_pages_downloader` nem `property_pages_downloader`
 - Verificar se `.env` existe e contém `OPENAI_API_KEY`
-- Verificar se API key é válida no OpenAI dashboard
 
-### "No properties found"
+### "Page X has NO properties" muito cedo
 - Verificar se o site está acessível
-- Verificar se estrutura HTML do site mudou
-- Aumentar token limit se necessário
+- Verificar se a estrutura HTML do site mudou (o regex espera hrefs `/imovel/...`)
 
 ### Requisições lentas
 - Ajustar `REQUEST_DELAY` em `config.py`
 - Verificar velocidade da internet
-- OpenAI rate limiting pode estar ativo
 
 ## 📄 Licença
 

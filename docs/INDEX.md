@@ -193,8 +193,7 @@ airflow/dags/
 
 #### `requirements.txt`
 - Dependências Python
-- openai, requests, python-dotenv
-- Optional: beautifulsoup4, lxml
+- openai, python-dotenv, sqlalchemy, psycopg2-binary
 
 ### Documentação
 

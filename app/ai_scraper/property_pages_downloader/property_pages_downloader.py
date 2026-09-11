@@ -9,7 +9,10 @@ from urllib.parse import urlparse
 from config import DFIMOVEIS_BASE_URL, RAW_DATA_DIR
 from http_client import HTTPClient
 
-LINK_PATTERN = re.compile(r'href="(/imovel/[^"]+)"')
+LINK_PATTERN = re.compile(
+    r'(?:href=["\']?)?((?:https?://[^"\'\s>]+)?/imovel/[A-Za-z0-9][^"\'\s>)]*)',
+    re.IGNORECASE,
+)
 
 
 class PropertyPagesDownloader:
@@ -23,8 +26,10 @@ class PropertyPagesDownloader:
         """Extract unique ad links found on a listing page."""
         links = []
         seen = set()
-        for href in LINK_PATTERN.findall(html):
-            full_url = href if href.startswith("http") else f"{base_url}{href}"
+        base = base_url.rstrip("/")
+        for raw_link in LINK_PATTERN.findall(html):
+            cleaned = raw_link.rstrip(".,;:")
+            full_url = cleaned if cleaned.startswith("http") else f"{base}{cleaned}"
             if full_url not in seen:
                 seen.add(full_url)
                 links.append(full_url)

@@ -1,49 +1,61 @@
-"""Orchestrator for downloading paginated listing pages as HTML."""
+"""Orchestrator for downloading paginated listing pages and extracting ad links."""
 
-import os
+import json
 import re
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
-from config import DFIMOVEIS_SEARCH_URL, MAX_PAGES, RAW_DATA_DIR, TRANSACTION_TYPES
+from config import DFIMOVEIS_BASE_URL, DFIMOVEIS_SEARCH_URL, MAX_PAGES, RAW_DATA_DIR, TRANSACTION_TYPES
 from http_client import HTTPClient
+
+LINK_PATTERN = re.compile(
+    r'(?:href=["\']?)?((?:https?://[^"\'\s>]+)?/imovel/[A-Za-z0-9][^"\'\s>)]*)',
+    re.IGNORECASE,
+)
 
 
 class AIScraper:
-    """Web scraper that saves pagination pages as HTML."""
+    """Web scraper that extracts ad links from paginated listing pages, without saving HTML."""
 
-    def __init__(self):
-        self.http_client = HTTPClient()
+    def __init__(self, http_client=None):
+        self.http_client = http_client or HTTPClient()
         self.transaction_type = None
-        self.raw_data_dir = None
 
     @staticmethod
-    def count_properties_in_html(html: str) -> int:
-        """Count unique property IDs in HTML by finding data-id attributes."""
-        pattern = r'data-id="(\d+)"'
-        matches = re.findall(pattern, html)
-        return len(set(matches))
+    def extract_property_links(html: str, base_url: str = DFIMOVEIS_BASE_URL) -> List[str]:
+        """Extract unique ad links from a listing page's HTML using a regex (no AI call)."""
+        links = []
+        seen = set()
+        base = base_url.rstrip("/")
+        for raw_link in LINK_PATTERN.findall(html):
+            cleaned = raw_link.rstrip(".,;:")
+            full_url = cleaned if cleaned.startswith("http") else f"{base}{cleaned}"
+            if full_url not in seen:
+                seen.add(full_url)
+                links.append(full_url)
+        return links
 
-    def save_page_html(self, page: int, html: str) -> Path:
-        """Save page HTML to file."""
-        output_dir = Path(self.raw_data_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
-        file_path = output_dir / f"page_{page:03d}.html"
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(html)
-        return file_path
+    @staticmethod
+    def links_output_path(transaction_type: str) -> Path:
+        """Path of the JSON file where a transaction type's page links are saved."""
+        return Path(RAW_DATA_DIR) / transaction_type / "links.json"
 
-    def scrape_transaction_type(self, transaction_type: str) -> List[str]:
-        """Scrape and save all pagination pages for a transaction type."""
+    def save_links(self, transaction_type: str, pages: List[Dict[str, object]]) -> Path:
+        """Save the per-page ad links as a single JSON file, returning its path."""
+        output_path = self.links_output_path(transaction_type)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(pages, ensure_ascii=False, indent=2), encoding="utf-8")
+        return output_path
+
+    def scrape_transaction_type(self, transaction_type: str) -> List[Dict[str, object]]:
+        """Fetch every pagination page's HTML and extract its ad links, saving them as JSON."""
         self.transaction_type = transaction_type
         url_type = TRANSACTION_TYPES[transaction_type]
-        self.raw_data_dir = os.path.join(RAW_DATA_DIR, transaction_type, "pages")
 
-        saved_pages = []
+        pages: List[Dict[str, object]] = []
         current_page = 1
-        total_properties = 0
-        print(f"\n🤖 Starting AI scraping for {transaction_type}...")
-        print(f"📁 Output directory: {self.raw_data_dir}\n")
+        total_links = 0
+        print(f"\n🤖 Starting scraping for {transaction_type}...")
 
         while True:
             if MAX_PAGES and current_page > MAX_PAGES:
@@ -57,27 +69,27 @@ class AIScraper:
                 print("❌ Fetch failed")
                 break
 
-            file_path = self.save_page_html(current_page, html)
-            saved_pages.append(str(file_path))
-            property_count = self.count_properties_in_html(html)
-            print(f"Saved → {property_count} properties")
+            links = self.extract_property_links(html)
+            print(f"→ {len(links)} links")
 
-            if property_count == 0:
+            if not links:
                 print("\n✅ Reached end of pagination")
                 print(f"   Page {current_page} has NO properties")
                 break
 
-            total_properties += property_count
+            pages.append({"page": current_page, "links": links})
+            total_links += len(links)
             current_page += 1
+
+        output_path = self.save_links(transaction_type, pages)
 
         print(f"\n{'='*60}")
         print("📊 Scraping Summary:")
-        print(f"  Total pages fetched: {current_page - 1}")
-        print(f"  Total properties found: {total_properties}")
-        print(f"  Output directory: {self.raw_data_dir}")
-        print(f"  Pages saved: {len(saved_pages)}")
+        print(f"  Total pages fetched: {len(pages)}")
+        print(f"  Total links found: {total_links}")
+        print(f"  Output file: {output_path}")
         print(f"{'='*60}\n")
-        return saved_pages
+        return pages
 
     def close(self):
         """Clean up resources."""
