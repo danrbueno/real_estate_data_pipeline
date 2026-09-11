@@ -10,7 +10,7 @@ from pathlib import Path
 project_root = str(Path(__file__).parent)
 sys.path.insert(0, project_root)
 
-from app.ai_scraper import AIScraper
+from app.ai_scraper import AdLinksCollector
 
 
 def test_basic_scraping():
@@ -19,11 +19,11 @@ def test_basic_scraping():
     print("🤖 AI Scraper - Test Suite")
     print("="*60)
 
-    scraper = AIScraper()
+    scraper = AdLinksCollector()
 
     print("\n1️⃣  Testing rentals scraping...")
     try:
-        rentals = scraper.scrape_transaction_type("rentals")
+        rentals = scraper.collect("rentals")
         print(f"✅ Success! Extracted {len(rentals)} rentals")
         if rentals:
             print(f"   First item: {rentals[0].get('title', 'N/A')}")
@@ -32,7 +32,7 @@ def test_basic_scraping():
 
     print("\n2️⃣  Testing sales scraping...")
     try:
-        sales = scraper.scrape_transaction_type("sales")
+        sales = scraper.collect("sales")
         print(f"✅ Success! Extracted {len(sales)} sales")
         if sales:
             print(f"   First item: {sales[0].get('title', 'N/A')}")
@@ -48,13 +48,13 @@ def test_basic_scraping():
 
 def example_single_transaction_type():
     """Example: Scrape single transaction type"""
-    from app.ai_scraper import AIScraper
+    from app.ai_scraper import AdLinksCollector
 
-    scraper = AIScraper()
+    scraper = AdLinksCollector()
 
     # Scrape rentals only
     print("Scraping rentals...")
-    properties = scraper.scrape_transaction_type("rentals")
+    properties = scraper.collect("rentals")
 
     print(f"\nTotal properties extracted: {len(properties)}")
     print("\nSample data:")
@@ -66,13 +66,13 @@ def example_single_transaction_type():
 
 def example_with_airflow():
     """Example: How to use with Airflow"""
-    from app.ai_scraper import AIScraper
+    from app.ai_scraper import AdLinksCollector
 
     def airflow_task_scrap_rentals():
         """Airflow task that scrapes rentals"""
-        scraper = AIScraper()
+        scraper = AdLinksCollector()
         try:
-            properties = scraper.scrape_transaction_type("rentals")
+            properties = scraper.collect("rentals")
             return {"status": "success", "count": len(properties)}
         finally:
             scraper.close()

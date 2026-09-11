@@ -6,23 +6,22 @@
 
 ```bash
 # 1. Instalar dependências
-pip install -r ai_scraper/requirements.txt
+pip install -r config/requirements.txt
 
 # 2. Configurar API key (copiar e editar .env)
 cp .env.example .env
 # Editar .env: OPENAI_API_KEY=sk-...
 
 # 3. Executar!
-python -m app.ai_scraper.main_pages_downloader.main --type rentals
+python -m app.ai_scraper.ad_links_collector.main --type rentals
 ```
 
 ## 📊 Características
 
 ### Inteligência Semântica
 ```python
-# Compreensão automática de conteúdo
-links = ai_agent.extract_property_links(html)
-details = ai_agent.extract_property_details(html)
+# Extração de campos de uma página de anúncio (etapa reservada para o futuro)
+details = ai_agent.extract_property_page_details(html, property_url)
 ```
 
 ## ✨ Vantagens
@@ -37,14 +36,13 @@ details = ai_agent.extract_property_details(html)
 
 ```
 ai_scraper/              ⭐ NOVO: Módulo de IA
-├── main_pages_downloader/
+├── ad_links_collector/
 │   ├── main.py         # CLI do downloader de páginas de listagem
-│   └── main_pages_downloader.py # Downloader de paginação
+│   └── ad_links_collector.py # Extrator de links de anúncios (HTTP + regex)
 ├── property_pages_downloader/
 │   ├── main.py         # CLI do downloader de anúncios
 │   └── property_pages_downloader.py
-├── ai_agent.py         # Agente OpenAI
-└── main_pages_downloader.py # Orquestrador
+└── ai_agent.py         # Agente OpenAI (reservado para extração de campos)
 
 airflow/dags/
 └── dag_pipeline_real_estate_ai.py  ⭐ NOVO: DAG com IA
@@ -55,24 +53,21 @@ airflow/dags/
 ### 1. **Linha de Comando**
 ```bash
 # Scrape rentals
-python -m app.ai_scraper.main_pages_downloader.main --type rentals
+python -m app.ai_scraper.ad_links_collector.main --type rentals
 
 # Scrape sales
-python -m app.ai_scraper.main_pages_downloader.main --type sales
-
-# Limitar a 3 páginas
-python -m app.ai_scraper.main_pages_downloader.main --type rentals --max-pages 3
+python -m app.ai_scraper.ad_links_collector.main --type sales
 ```
 
 ### 2. **Com Python**
 ```python
-from ai_scraper import AIScraper
+from ai_scraper import AdLinksCollector
 
-scraper = AIScraper()
-properties = scraper.scrape_transaction_type("rentals")
+scraper = AdLinksCollector()
+pages = scraper.collect("rentals")
 scraper.close()
 
-print(f"Extracted {len(properties)} properties")
+print(f"Extracted {sum(len(p['links']) for p in pages)} ad links")
 ```
 
 ### 3. **Com Airflow**
@@ -110,13 +105,13 @@ Os dados são salvos em JSON:
 ## 🧪 Teste Rápido
 
 ```bash
-# Teste com 1 página (rápido)
-python ai_scraper/main.py --type rentals --max-pages 1
+# Teste com o tipo rentals
+python -m app.ai_scraper.ad_links_collector.main --type rentals
 
 # Verificar resultado
-cat data/web/rentals.json | head -1
+cat data/raw/rentals/links.json | head -20
 
-# Resultado esperado: JSON válido com propriedades
+# Resultado esperado: JSON válido com links de anúncios
 ```
 
 ## 💡 FAQ Rápido
@@ -184,20 +179,18 @@ Consulte os arquivos de documentação listados acima. Toda implementação est�
 
 ```bash
 # 1. Setup (2 min)
-pip install -r ai_scraper/requirements.txt && cp .env.example .env
+pip install -r config/requirements.txt && cp .env.example .env
 
 # 2. Configure (1 min)
 # Editar .env com sua API key
 
 # 3. Teste (5 min)
-python ai_scraper/main.py --type rentals --max-pages 1
+python -m app.ai_scraper.ad_links_collector.main --type rentals
 
 # 4. Aproveite! 🎊
 ```
 
 ---
-
-**Leia antes de começar:** [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)
 
 **Documentação completa:** Ver lista acima
 

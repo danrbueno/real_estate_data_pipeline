@@ -42,8 +42,5 @@ RAW_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "raw")
 # Request timeout
 REQUEST_TIMEOUT = 30
 
-# Max pages to scrape (None = all)
-MAX_PAGES = None
-
 # Delay between requests (seconds)
 REQUEST_DELAY = 2

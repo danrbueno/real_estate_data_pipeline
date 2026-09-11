@@ -73,27 +73,23 @@
                     │ OpenAI GPT-4-turbo            │
                     │ (or gpt-3.5-turbo)            │
                     │                               │
-                    │ Methods:                      │
-                    │ ├─ extract_property_links()   │
-                    │ ├─ extract_pagination_info()  │
-                    │ └─ extract_property_details() │
+                    │ Methods (reserved for a       │
+                    │ future detail-field step):    │
+                    │ ├─ extract_property_details() │
+                    │ └─ extract_property_page_details() │
                     │                               │
                     │ Returns: JSON objects         │
                     └────────────┬──────────────────┘
                                  │
                     ┌────────────▼──────────────────┐
-                    │  AIScraper Orchestrator       │
+                    │  AdLinksCollector             │
                     │                               │
                     │ while has_pages:              │
-                    │   ├─ fetch page HTML          │
-                    │   ├─ extract links            │
-                    │   ├─ for each link:           │
-                    │   │  ├─ fetch property HTML   │
-                    │   │  ├─ extract details       │
-                    │   │  ├─ validate data         │
-                    │   │  └─ save JSON             │
-                    │   ├─ check pagination        │
+                    │   ├─ fetch page HTML (HTTP)   │
+                    │   ├─ extract links (regex)    │
+                    │   ├─ if no links: stop        │
                     │   └─ next page                │
+                    │ save all pages' links to JSON │
                     └────────────┬──────────────────┘
                                  │
                     ┌────────────▼──────────────────┐
@@ -204,14 +200,13 @@
 │  │ • DFIMOVEIS_BASE_URL: URL base                      │   │
 │  │ • REQUEST_TIMEOUT: timeout HTTP (30s)              │   │
 │  │ • REQUEST_DELAY: delay entre requisições (2s)      │   │
-│  │ • MAX_PAGES: limite de páginas (None=todas)        │   │
 │  └──────────────────────────────────────────────────────┘   │
 │                          │                                   │
 │  ┌──────────────────────▼──────────────────────────────┐   │
 │  │ http_client.py                                      │   │
 │  │ ┌────────────────────────────────────────────────┐  │   │
 │  │ │ HTTPClient class                              │  │   │
-│  │ │ ├─ session: requests.Session()                │  │   │
+│  │ │ ├─ urllib.request (standard library)          │  │   │
 │  │ │ ├─ delay: rate limiting                       │  │   │
 │  │ │ └─ get(url): fetch com rate limiting          │  │   │
 │  │ │                                               │  │   │
@@ -224,34 +219,31 @@
 │  │ │ AIScrapingAgent class                         │  │   │
 │  │ │ ├─ client: OpenAI()                           │  │   │
 │  │ │ ├─ model: "gpt-4-turbo"                       │  │   │
-│  │ │ └─ Methods:                                   │  │   │
+│  │ │ └─ Methods (reserved for a future             │  │   │
+│  │ │    detail-field extraction step):             │  │   │
 │  │ │    ├─ _call_openai(prompt)                    │  │   │
 │  │ │    │  └─ chama API OpenAI                     │  │   │
-│  │ │    ├─ extract_property_links(html, base_url)  │  │   │
-│  │ │    │  └─ retorna lista de URLs                │  │   │
-│  │ │    ├─ extract_pagination_info(html)           │  │   │
-│  │ │    │  └─ retorna {current, total, has_next}   │  │   │
 │  │ │    ├─ extract_property_details(html, url)     │  │   │
 │  │ │    │  └─ retorna dict com dados               │  │   │
+│  │ │    ├─ extract_property_page_details(html, url)│  │   │
+│  │ │    │  └─ retorna dict com dados da página      │  │   │
 │  │ │    └─ validate_extraction(data)               │  │   │
 │  │ │       └─ valida dados extraídos               │  │   │
 │  │ └────────────────────────────────────────────────┘  │   │
 │  └──────────────────────┬───────────────────────────────┘   │
 │                         │                                    │
 │  ┌──────────────────────▼──────────────────────────────┐   │
-│  │ scraper.py                                         │   │
+│  │ ad_links_collector.py                              │   │
 │  │ ┌────────────────────────────────────────────────┐  │   │
-│  │ │ AIScraper class (Orchestrator)                │  │   │
+│  │ │ AdLinksCollector class                        │  │   │
 │  │ │ ├─ http_client: HTTPClient()                  │  │   │
-│  │ │ ├─ ai_agent: AIScrapingAgent()                │  │   │
 │  │ │ └─ Methods:                                   │  │   │
-│  │ │    ├─ scrape_transaction_type(type)           │  │   │
+│  │ │    ├─ collect(transaction_type)               │  │   │
 │  │ │    │  ├─ loop through pages                   │  │   │
-│  │ │    │  ├─ extract links                        │  │   │
-│  │ │    │  ├─ scrape details                       │  │   │
-│  │ │    │  └─ save JSON                            │  │   │
-│  │ │    ├─ _save_property_to_json(data)            │  │   │
-│  │ │    │  └─ append JSONL file                    │  │   │
+│  │ │    │  ├─ extract links (regex, no AI call)     │  │   │
+│  │ │    │  └─ save links.json                       │  │   │
+│  │ │    ├─ collect_page_ad_links(html)             │  │   │
+│  │ │    │  └─ regex extraction, no AI call          │  │   │
 │  │ │    └─ close()                                 │  │   │
 │  │ │       └─ cleanup                              │  │   │
 │  │ └────────────────────────────────────────────────┘  │   │
@@ -260,8 +252,8 @@
 │  ┌──────────────────────▼──────────────────────────────┐   │
 │  │ main.py                                            │   │
 │  │ • CLI entry point                                  │   │
-│  │ • Argumentos: --type, --max-pages                  │   │
-│  │ • Uso: python ai_scraper/main.py --type rentals  │   │
+│  │ • Argumento: --type                                │   │
+│  │ • Uso: python -m app.ai_scraper.ad_links_collector.main --type rentals │
 │  └──────────────────────────────────────────────────────┘   │
 │                                                              │
 └──────────────────────────────────────────────────────────────┘
@@ -272,46 +264,25 @@
 ```
 main.py
   │
-  ├─ parse arguments (--type, --max-pages)
+  ├─ parse arguments (--type)
   │
-  └─ AIScraper.scrape_transaction_type("rentals")
+  └─ AdLinksCollector.collect("rentals")
       │
       ├─ Loop: for page in pages:
       │   │
       │   ├─ HTTPClient.get(url)
       │   │   └─ fetch HTML com rate limiting
       │   │
-      │   ├─ AIScrapingAgent.extract_property_links(html)
-      │   │   ├─ _call_openai(prompt)
-      │   │   │  └─ OpenAI GPT-4 processa HTML
-      │   │   └─ return [url1, url2, ...]
+      │   ├─ AdLinksCollector.collect_page_ad_links(html)
+      │   │   └─ return [url1, url2, ...] (regex, sem chamada à IA)
       │   │
-      │   ├─ AIScrapingAgent.extract_pagination_info(html)
-      │   │   └─ return {current_page, total_pages, has_next}
-      │   │
-      │   ├─ Loop: for property_url in links:
-      │   │   │
-      │   │   ├─ HTTPClient.get(property_url)
-      │   │   │   └─ fetch property HTML
-      │   │   │
-      │   │   ├─ AIScrapingAgent.extract_property_details(html)
-      │   │   │   ├─ _call_openai(prompt)
-      │   │   │   │  └─ extract: title, price, area, ...
-      │   │   │   └─ return dict
-      │   │   │
-      │   │   ├─ AIScrapingAgent.validate_extraction(data)
-      │   │   │   └─ check required fields
-      │   │   │
-      │   │   └─ _save_property_to_json(data)
-      │   │       └─ append to file (JSONL format)
-      │   │
-      │   └─ if not has_next_page: break
+      │   └─ if not links: break (fim da paginação)
       │
-      └─ close()
-          └─ cleanup resources
+      └─ save_links(transaction_type, pages)
+          └─ grava data/raw/<tipo>/links.json
 
 Output:
-  ✓ data/web/rentals.json (ou sales.json)
+  ✓ data/raw/rentals/links.json (ou sales/links.json)
 ```
 
 ## Integração com Airflow
@@ -328,11 +299,11 @@ dag_pipeline_real_estate_ai.py
 │       │
 │       ├─ Task: scrap_rentals (PythonOperator)
 │       │   └─ PythonCallable: scrap_rentals()
-│       │       └─ AIScraper().scrape_transaction_type("rentals")
+│       │       └─ AdLinksCollector().collect("rentals")
 │       │
 │       └─ Task: scrap_sales (PythonOperator)
 │           └─ PythonCallable: scrap_sales()
-│               └─ AIScraper().scrape_transaction_type("sales")
+│               └─ AdLinksCollector().collect("sales")
 │
 ├─ TaskGroup: transform
 │   ├─ Task: transform_rentals

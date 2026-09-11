@@ -27,23 +27,26 @@ REQUEST_DELAY = 2  # Recomendado
 REQUEST_DELAY = 5  # Seguro (para sites sensíveis)
 ```
 
-### 3. Limitar Número de Páginas
+### 3. Testar com um Tipo por Vez
 
 ```bash
-# Testar com poucas páginas primeiro
-python ai_scraper/main.py --type rentals --max-pages 3
+# Testar rentals isoladamente
+python -m app.ai_scraper.ad_links_collector.main --type rentals
 
-# Em produção
-python ai_scraper/main.py --type rentals  # Todas as páginas
+# Depois sales
+python -m app.ai_scraper.ad_links_collector.main --type sales
 ```
+
+> Nota: a opção `--max-pages` foi removida — o coletor sempre percorre todas as
+> páginas disponíveis até encontrar uma sem anúncios.
 
 ### 4. Implementar Cache
 
 ```python
-# Em ai_scraper/main_pages_downloader/main_pages_downloader.py
+# Em ai_scraper/ad_links_collector/ad_links_collector.py
 import hashlib
 
-class AIScraper:
+class AdLinksCollector:
     def __init__(self):
         # ... código existente ...
         self.cache = {}
@@ -63,7 +66,7 @@ class AIScraper:
 ### 1. Logging Estruturado
 
 ```python
-# Em ai_scraper/main_pages_downloader/main_pages_downloader.py
+# Em ai_scraper/ad_links_collector/ad_links_collector.py
 import logging
 
 logging.basicConfig(
@@ -156,7 +159,6 @@ time.sleep(REQUEST_DELAY)
 OPENAI_API_KEY=sk-prod-...
 OPENAI_MODEL=gpt-3.5-turbo
 REQUEST_TIMEOUT=60
-MAX_PAGES=null  # Scrape todas
 REQUEST_DELAY=2
 ```
 
@@ -194,7 +196,7 @@ task_notify_completion = SlackWebhookOperator(
 # ai_scraper/config.py
 DEBUG = True
 
-# Use em ai_scraper/main_pages_downloader/main_pages_downloader.py
+# Use em ai_scraper/ad_links_collector/ad_links_collector.py
 if DEBUG:
     print(f"Fetching: {url}")
     print(f"HTML length: {len(html)}")
@@ -220,33 +222,26 @@ def save_debug_response(url, html, response):
 ### 3. Testes Unitários
 
 ```python
-# tests/test_ai_agent.py
+# tests/test_ai_scraper.py
 import unittest
 
-class TestAIAgent(unittest.TestCase):
-    def setUp(self):
-        self.agent = AIScrapingAgent()
-    
-    def test_extract_links(self):
-        # Mock HTML
-        html = '<a href="/property/123">Property</a>'
-        links = self.agent.extract_property_links(html, "https://example.com")
-        self.assertIn("https://example.com/property/123", links)
+class TestAdLinksCollector(unittest.TestCase):
+    def test_collect_page_ad_links(self):
+        html = '<a href="/imovel/apto-123">Anúncio</a>'
+        links = AdLinksCollector.collect_page_ad_links(html, "https://example.com")
+        self.assertIn("https://example.com/imovel/apto-123", links)
 ```
 
 ## 💡 Dicas Práticas
 
-### 1. Testar com Páginas Pequenas Primeiro
+### 1. Testar Isoladamente por Tipo Antes de Rodar Tudo
 
 ```bash
-# Teste com 1 página
-python ai_scraper/main.py --type rentals --max-pages 1
+# Testar rentals
+python -m app.ai_scraper.ad_links_collector.main --type rentals
 
-# Depois 5
-python ai_scraper/main.py --type rentals --max-pages 5
-
-# Depois todas
-python ai_scraper/main.py --type rentals
+# Depois sales
+python -m app.ai_scraper.ad_links_collector.main --type sales
 ```
 
 ### 2. Usar Diferentes Modelos por Tarefa

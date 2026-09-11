@@ -24,16 +24,12 @@ def main():
         "--type", "-t", choices=["rentals", "sales"], default="sales",
         help="Transaction type to download (default: sales)"
     )
-    parser.add_argument(
-        "--max-pages", "-m", type=int, default=None,
-        help="Maximum number of saved listing pages to process (default: all)"
-    )
 
     args = parser.parse_args()
 
     try:
         extractor = PropertyPagesDownloader()
-        extractor.extract_transaction_type(args.type, args.max_pages)
+        extractor.extract_transaction_type(args.type)
         extractor.close()
         print(f"\n✅ Download of {args.type} property pages completed successfully!")
         return 0

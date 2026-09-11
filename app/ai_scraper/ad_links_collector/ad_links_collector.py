@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import Dict, List
 
-from config import DFIMOVEIS_BASE_URL, DFIMOVEIS_SEARCH_URL, MAX_PAGES, RAW_DATA_DIR, TRANSACTION_TYPES
+from config import DFIMOVEIS_BASE_URL, DFIMOVEIS_SEARCH_URL, RAW_DATA_DIR, TRANSACTION_TYPES
 from http_client import HTTPClient
 
 LINK_PATTERN = re.compile(
@@ -14,7 +14,7 @@ LINK_PATTERN = re.compile(
 )
 
 
-class AIScraper:
+class AdLinksCollector:
     """Web scraper that extracts ad links from paginated listing pages, without saving HTML."""
 
     def __init__(self, http_client=None):
@@ -22,8 +22,8 @@ class AIScraper:
         self.transaction_type = None
 
     @staticmethod
-    def extract_property_links(html: str, base_url: str = DFIMOVEIS_BASE_URL) -> List[str]:
-        """Extract unique ad links from a listing page's HTML using a regex (no AI call)."""
+    def collect_page_ad_links(html: str, base_url: str = DFIMOVEIS_BASE_URL) -> List[str]:
+        """Extract unique ad links from a listing page's HTML using a regex (no AI call). Returns a list of full URLs."""
         links = []
         seen = set()
         base = base_url.rstrip("/")
@@ -47,7 +47,7 @@ class AIScraper:
         output_path.write_text(json.dumps(pages, ensure_ascii=False, indent=2), encoding="utf-8")
         return output_path
 
-    def scrape_transaction_type(self, transaction_type: str) -> List[Dict[str, object]]:
+    def collect(self, transaction_type: str) -> List[Dict[str, object]]:
         """Fetch every pagination page's HTML and extract its ad links, saving them as JSON."""
         self.transaction_type = transaction_type
         url_type = TRANSACTION_TYPES[transaction_type]
@@ -58,10 +58,6 @@ class AIScraper:
         print(f"\n🤖 Starting scraping for {transaction_type}...")
 
         while True:
-            if MAX_PAGES and current_page > MAX_PAGES:
-                print(f"⏹️  Reached max_pages limit: {MAX_PAGES}")
-                break
-
             url = DFIMOVEIS_SEARCH_URL.format(url_type, current_page)
             print(f"📄 Page {current_page}: Fetching...", end=" ", flush=True)
             html = self.http_client.get(url)
@@ -69,7 +65,7 @@ class AIScraper:
                 print("❌ Fetch failed")
                 break
 
-            links = self.extract_property_links(html)
+            links = self.collect_page_ad_links(html)
             print(f"→ {len(links)} links")
 
             if not links:

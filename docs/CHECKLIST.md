@@ -6,11 +6,11 @@
 - [x] `ai_scraper/__init__.py` - Package initialization
 - [x] `ai_scraper/config.py` - Configurações e constantes
 - [x] `ai_scraper/http_client.py` - Cliente HTTP com rate limiting
-- [x] `ai_scraper/ai_agent.py` - Agente OpenAI para extração
-- [x] `ai_scraper/main_pages_downloader/main_pages_downloader.py` - Orquestrador principal
-- [x] `ai_scraper/main.py` - CLI entry point
+- [x] `ai_scraper/ai_agent.py` - Agente OpenAI (reservado para extração de campos)
+- [x] `ai_scraper/ad_links_collector/ad_links_collector.py` - Extrator de links de anúncios
+- [x] `ai_scraper/ad_links_collector/main.py` - CLI entry point
 - [x] `ai_scraper/README.md` - Documentação técnica
-- [x] `ai_scraper/requirements.txt` - Dependências Python
+- [x] `config/requirements.txt` - Dependências Python
 
 ### Documentação
 - [x] `OPTIMIZATION_GUIDE.md` - Otimizações e boas práticas
@@ -31,7 +31,7 @@
 - [ ] Internet para download de dependências
 
 ### Instalação
-- [ ] `pip install -r ai_scraper/requirements.txt` executado com sucesso
+- [ ] `pip install -r config/requirements.txt` executado com sucesso
 - [ ] `.env` criado com `OPENAI_API_KEY`
 - [ ] API key testada e validada
 
@@ -39,7 +39,7 @@
 
 ### Teste 1: Importação do Módulo
 ```bash
-python -c "from ai_scraper import AIScraper; print('✅ Import OK')"
+python -c "from ai_scraper import AdLinksCollector; print('✅ Import OK')"
 ```
 - [ ] Resultado: `✅ Import OK`
 
@@ -49,20 +49,20 @@ python -c "from ai_scraper import config; print(config.OPENAI_MODEL)"
 ```
 - [ ] Resultado: Nome do modelo (ex: `gpt-4-turbo`)
 
-### Teste 3: Teste com Página Única
+### Teste 3: Teste com Tipo Único
 ```bash
-python ai_scraper/main.py --type rentals --max-pages 1
+python -m app.ai_scraper.ad_links_collector.main --type rentals
 ```
-- [ ] Arquivo `data/web/rentals.json` criado
-- [ ] Contém propriedades extraídas
+- [ ] Arquivo `data/raw/rentals/links.json` criado
+- [ ] Contém links de anúncios extraídos
 - [ ] Formato JSON válido
 
-### Teste 4: Teste com Múltiplas Páginas
+### Teste 4: Teste com Outro Tipo
 ```bash
-python ai_scraper/main.py --type sales --max-pages 3
+python -m app.ai_scraper.ad_links_collector.main --type sales
 ```
-- [ ] Arquivo `data/web/sales.json` atualizado
-- [ ] Múltiplas propriedades extraídas
+- [ ] Arquivo `data/raw/sales/links.json` atualizado
+- [ ] Múltiplas páginas de links extraídas
 - [ ] Sem erros de paginação
 
 ### Teste 5: Verificar Formato de Saída
@@ -209,10 +209,10 @@ OPENAI_MODEL = "gpt-3.5-turbo"  # ao invés de gpt-4-turbo
 
 ### Problema: Extração incompleta
 ```bash
-# Testar com DEBUG
-python ai_scraper/main.py --type rentals --max-pages 1 --verbose
+# Testar novamente
+python -m app.ai_scraper.ad_links_collector.main --type rentals
 
-# Revisar prompts em ai_agent.py
+# Revisar regex de extração em ad_links_collector.py
 ```
 
 ## ✅ Checklist Final
@@ -250,5 +250,5 @@ Marque quando tudo estiver pronto:
 **Próximo passo:** Execute o primeiro teste! 🚀
 
 ```bash
-python ai_scraper/main.py --type rentals --max-pages 1
+python -m app.ai_scraper.ad_links_collector.main --type rentals
 ```

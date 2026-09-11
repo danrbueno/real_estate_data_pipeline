@@ -27,7 +27,7 @@ from airflow.utils.task_group import TaskGroup
 from app.airflow.dags.pipelines import sales
 
 # Import AI Scraper
-from app.ai_scraper import AIScraper
+from app.ai_scraper import AdLinksCollector
 
 
 # DAG scheduled to be executed every day at 12 AM
@@ -44,9 +44,9 @@ dag = DAG(
 # Scraping functions
 def scrap_rentals():
     """Scrape rental data using AI agents"""
-    scraper = AIScraper()
+    scraper = AdLinksCollector()
     try:
-        properties = scraper.scrape_transaction_type("rentals")
+        properties = scraper.collect("rentals")
         return {
             "status": "success",
             "transaction_type": "rentals",
@@ -58,9 +58,9 @@ def scrap_rentals():
 
 def scrap_sales():
     """Scrape sales data using AI agents"""
-    scraper = AIScraper()
+    scraper = AdLinksCollector()
     try:
-        properties = scraper.scrape_transaction_type("sales")
+        properties = scraper.collect("sales")
         return {
             "status": "success",
             "transaction_type": "sales",

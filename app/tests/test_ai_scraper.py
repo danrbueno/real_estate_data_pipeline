@@ -10,7 +10,7 @@ from urllib.error import HTTPError, URLError
 import pytest
 
 from app.ai_scraper import ai_agent, config, http_client
-from app.ai_scraper.main_pages_downloader import main as main_pages_main, main_pages_downloader
+from app.ai_scraper.ad_links_collector import ad_links_collector, main as main_pages_main
 from app.ai_scraper.property_pages_downloader import main as property_pages_main, property_pages_downloader
 
 
@@ -62,7 +62,7 @@ def test_config_defaults_and_exports(monkeypatch):
     assert reloaded.OPENAI_MODEL == "gpt-4-turbo"
     assert reloaded.TRANSACTION_TYPES == {"sales": "venda", "rentals": "aluguel"}
     assert package.__version__ == "1.0.0"
-    assert "AIScraper" in package.__all__
+    assert "AdLinksCollector" in package.__all__
 
 
 def test_config_falls_back_to_dotenv_search_when_no_candidate_env_file_exists(monkeypatch):
@@ -185,8 +185,8 @@ def test_agent_builds_extraction_prompts_and_validates(monkeypatch):
 
 
 def test_save_links_writes_json_file(tmp_path, monkeypatch):
-    monkeypatch.setattr(main_pages_downloader, "RAW_DATA_DIR", str(tmp_path))
-    instance = main_pages_downloader.AIScraper.__new__(main_pages_downloader.AIScraper)
+    monkeypatch.setattr(ad_links_collector, "RAW_DATA_DIR", str(tmp_path))
+    instance = ad_links_collector.AdLinksCollector.__new__(ad_links_collector.AdLinksCollector)
 
     links = ["https://example.test/imovel/1", "https://example.test/imovel/2"]
     output_path = instance.save_links("rentals", [{"page": 1, "links": links}])
@@ -204,31 +204,30 @@ def test_extract_property_links_deduplicates_and_builds_full_urls_for_main_pages
         '<a href=/imovel/apartamento-1-quarto-aluguel-sul-aguas-claras-df-rua-17-1424764> '
         '<a href="/imovel/apartamento-2-quartos-aluguel-areal-aguas-claras-df-qs-5-rua-310-1422425'
     )
-    links = main_pages_downloader.AIScraper.extract_property_links(html)
+    links = ad_links_collector.AdLinksCollector.collect_page_ad_links(html)
     assert len(links) == 4
-    assert main_pages_downloader.AIScraper.extract_property_links("<html></html>") == []
+    assert ad_links_collector.AdLinksCollector.collect_page_ad_links("<html></html>") == []
 
 
 def test_scraper_constructor(monkeypatch):
     http = FakeMainPagesHTTPClient([])
-    monkeypatch.setattr(main_pages_downloader, "HTTPClient", lambda: http)
+    monkeypatch.setattr(ad_links_collector, "HTTPClient", lambda: http)
 
-    instance = main_pages_downloader.AIScraper()
+    instance = ad_links_collector.AdLinksCollector()
 
     assert instance.http_client is http
     assert instance.transaction_type is None
 
 
 def test_scraper_saves_pages_and_stops_at_empty_page(tmp_path, monkeypatch):
-    monkeypatch.setattr(main_pages_downloader, "RAW_DATA_DIR", str(tmp_path))
-    instance = main_pages_downloader.AIScraper.__new__(main_pages_downloader.AIScraper)
+    monkeypatch.setattr(ad_links_collector, "RAW_DATA_DIR", str(tmp_path))
+    instance = ad_links_collector.AdLinksCollector.__new__(ad_links_collector.AdLinksCollector)
     instance.http_client = FakeMainPagesHTTPClient([
         'href="/imovel/apartamento-1-quarto-aluguel-asa-sul-1375580"',
         "<html></html>",
     ])
-    monkeypatch.setattr(main_pages_downloader, "MAX_PAGES", None)
 
-    pages = instance.scrape_transaction_type("rentals")
+    pages = instance.collect("rentals")
 
     assert len(pages) == 1
     assert pages[0]["page"] == 1
@@ -240,33 +239,25 @@ def test_scraper_saves_pages_and_stops_at_empty_page(tmp_path, monkeypatch):
     assert saved == pages
 
 
-def test_scraper_stops_on_fetch_failure_and_max_pages(tmp_path, monkeypatch):
-    monkeypatch.setattr(main_pages_downloader, "RAW_DATA_DIR", str(tmp_path))
-    failed = main_pages_downloader.AIScraper.__new__(main_pages_downloader.AIScraper)
+def test_scraper_stops_on_fetch_failure(tmp_path, monkeypatch):
+    monkeypatch.setattr(ad_links_collector, "RAW_DATA_DIR", str(tmp_path))
+    failed = ad_links_collector.AdLinksCollector.__new__(ad_links_collector.AdLinksCollector)
     failed.http_client = FakeMainPagesHTTPClient([None])
-    monkeypatch.setattr(main_pages_downloader, "MAX_PAGES", None)
-    assert failed.scrape_transaction_type("sales") == []
-
-    limited = main_pages_downloader.AIScraper.__new__(main_pages_downloader.AIScraper)
-    limited.http_client = FakeMainPagesHTTPClient([
-        'href="/imovel/apartamento-1-quarto-aluguel-asa-sul-1375580"'
-    ])
-    monkeypatch.setattr(main_pages_downloader, "MAX_PAGES", 1)
-    assert len(limited.scrape_transaction_type("sales")) == 1
-    limited.close()
-    assert limited.http_client.closed
+    assert failed.collect("sales") == []
+    failed.close()
+    assert failed.http_client.closed
 
 
 @pytest.mark.parametrize(
     ("scraper_class", "expected"),
     [
-        (lambda: SimpleNamespace(scrape_transaction_type=lambda kind: [kind], close=lambda: None), 0),
+        (lambda: SimpleNamespace(collect=lambda kind: [kind], close=lambda: None), 0),
         (lambda: (_ for _ in ()).throw(KeyboardInterrupt()), 130),
         (lambda: (_ for _ in ()).throw(RuntimeError("broken")), 1),
     ],
 )
 def test_main_returns_expected_exit_codes(monkeypatch, scraper_class, expected):
-    monkeypatch.setattr(main_pages_main, "AIScraper", scraper_class)
+    monkeypatch.setattr(main_pages_main, "AdLinksCollector", scraper_class)
     monkeypatch.setattr(sys, "argv", ["main.py", "--type", "rentals"])
     assert main_pages_main.main() == expected
 
@@ -274,14 +265,14 @@ def test_main_returns_expected_exit_codes(monkeypatch, scraper_class, expected):
 def test_main_module_exits_with_cli_status(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["main.py", "--help"])
     with pytest.raises(SystemExit) as result:
-        runpy.run_module("app.ai_scraper.main_pages_downloader.main", run_name="__main__")
+        runpy.run_module("app.ai_scraper.ad_links_collector.main", run_name="__main__")
     assert result.value.code == 0
 
 
 @pytest.mark.parametrize(
     "script_path",
     [
-        Path("app/ai_scraper/main_pages_downloader/main.py"),
+        Path("app/ai_scraper/ad_links_collector/main.py"),
         Path("app/ai_scraper/property_pages_downloader/main.py"),
     ],
 )
@@ -391,7 +382,7 @@ def test_extractor_close_closes_http_client():
     assert http_client.closed
 
 
-def test_load_page_paths_sorts_and_limits(tmp_path, monkeypatch):
+def test_load_page_paths_sorts_pages(tmp_path, monkeypatch):
     monkeypatch.setattr(property_pages_downloader, "RAW_DATA_DIR", str(tmp_path))
     pages_dir = tmp_path / "rentals" / "pages"
     pages_dir.mkdir(parents=True)
@@ -400,9 +391,6 @@ def test_load_page_paths_sorts_and_limits(tmp_path, monkeypatch):
 
     all_paths = property_pages_downloader.PropertyPagesDownloader._load_page_paths("rentals")
     assert [p.name for p in all_paths] == ["page_001.html", "page_002.html"]
-
-    limited = property_pages_downloader.PropertyPagesDownloader._load_page_paths("rentals", max_pages=1)
-    assert [p.name for p in limited] == ["page_001.html"]
 
 
 def test_extract_transaction_type_downloads_property_pages(tmp_path, monkeypatch):
@@ -428,7 +416,7 @@ def test_extract_transaction_type_downloads_property_pages(tmp_path, monkeypatch
     [
         (
             lambda: SimpleNamespace(
-                extract_transaction_type=lambda kind, max_pages: [kind], close=lambda: None
+                extract_transaction_type=lambda kind: [kind], close=lambda: None
             ),
             0,
         ),

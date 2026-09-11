@@ -1,6 +1,6 @@
 """Download paginated listing pages.
 
-Usage: python -m app.ai_scraper.main_pages_downloader.main --type rentals|sales
+Usage: python -m app.ai_scraper.ad_links_collector.main --type rentals|sales
 """
 
 import argparse
@@ -13,28 +13,24 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(_project_root))
     sys.path.insert(0, str(_ai_scraper_dir))
 
-from app.ai_scraper.main_pages_downloader.main_pages_downloader import AIScraper
+from app.ai_scraper.ad_links_collector.ad_links_collector import AdLinksCollector
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Download paginated DFImoveis listing pages"
+        description="Download paginated DFImoveis listing pages using AdLinksCollector"
     )
     parser.add_argument(
         "--type", "-t", choices=["rentals", "sales"], default="sales",
         help="Transaction type to scrape (default: sales)"
     )
-    parser.add_argument(
-        "--max-pages", "-m", type=int, default=None,
-        help="Maximum number of pages to scrape (default: all)"
-    )
 
     args = parser.parse_args()
 
     try:
-        scraper = AIScraper()
-        scraper.scrape_transaction_type(args.type)
-        scraper.close()
+        ad_links_collector = AdLinksCollector()
+        ad_links_collector.collect(args.type)
+        ad_links_collector.close()
         print(f"\n✅ Scraping {args.type} completed successfully!")
         return 0
     except KeyboardInterrupt:
