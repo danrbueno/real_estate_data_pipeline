@@ -38,7 +38,6 @@ TRANSACTION_TYPES = {
 
 # Output paths
 RAW_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "raw")
-PROCESSED_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "properties")
 
 # Request timeout
 REQUEST_TIMEOUT = 30

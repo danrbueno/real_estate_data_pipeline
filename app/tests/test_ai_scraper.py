@@ -1,45 +1,17 @@
 import importlib
 import json
-import os
 import runpy
 import sys
 import builtins
 from pathlib import Path
 from types import SimpleNamespace
+from urllib.error import HTTPError, URLError
 
 import pytest
-import requests
 
 from app.ai_scraper import ai_agent, config, http_client
 from app.ai_scraper.main_pages_downloader import main as main_pages_main, main_pages_downloader
 from app.ai_scraper.property_pages_downloader import main as property_pages_main, property_pages_downloader
-
-
-class FakeResponse:
-    def __init__(self, text="<html></html>", error=None):
-        self.text = text
-        self.error = error
-
-    def raise_for_status(self):
-        if self.error:
-            raise self.error
-
-
-class FakeSession:
-    def __init__(self, response):
-        self.response = response
-        self.headers = {}
-        self.closed = False
-        self.calls = []
-
-    def get(self, url, timeout):
-        self.calls.append((url, timeout))
-        if isinstance(self.response, Exception):
-            raise self.response
-        return self.response
-
-    def close(self):
-        self.closed = True
 
 
 class FakeOpenAI:
@@ -58,7 +30,7 @@ class FakeOpenAI:
         )
 
 
-class FakeHTTPClient:
+class FakeMainPagesHTTPClient:
     def __init__(self, pages):
         self.pages = iter(pages)
         self.urls = []
@@ -70,26 +42,6 @@ class FakeHTTPClient:
 
     def close(self):
         self.closed = True
-
-
-class FakeDBSession:
-    """Stand-in for a SQLAlchemy session that assigns incrementing ids."""
-
-    _next_id = 0
-
-    def __init__(self):
-        self.added = []
-
-    def add(self, record):
-        FakeDBSession._next_id += 1
-        record.id = FakeDBSession._next_id
-        self.added.append(record)
-
-    def commit(self):
-        pass
-
-    def close(self):
-        pass
 
 
 def make_agent(monkeypatch, content=None, error=None):
@@ -136,8 +88,26 @@ def test_config_loads_existing_environment_file_and_handles_missing_dotenv(monke
 
 
 def test_http_client_returns_content_waits_and_closes(monkeypatch):
-    fake_session = FakeSession(FakeResponse("page"))
-    monkeypatch.setattr(http_client.requests, "Session", lambda: fake_session)
+    class FakeHeaders:
+        @staticmethod
+        def get_content_charset():
+            return "utf-8"
+
+    class FakeResponse:
+        headers = FakeHeaders()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        @staticmethod
+        def read():
+            return b"page"
+
+    calls = []
+    monkeypatch.setattr(http_client, "urlopen", lambda request, timeout: calls.append((request, timeout)) or FakeResponse())
     clock = iter([10, 10, 13])
     monkeypatch.setattr(http_client.time, "time", lambda: next(clock))
     sleeps = []
@@ -146,16 +116,14 @@ def test_http_client_returns_content_waits_and_closes(monkeypatch):
     client = http_client.HTTPClient(delay=5)
     client.last_request_time = 8
     assert client.get("https://example.test") == "page"
-    client.close()
-
     assert sleeps == [3]
-    assert fake_session.calls == [("https://example.test", config.REQUEST_TIMEOUT)]
-    assert fake_session.closed
+    assert calls[0][0].full_url == "https://example.test"
+    assert calls[0][1] == config.REQUEST_TIMEOUT
+    client.close()
 
 
 def test_http_client_returns_none_for_request_errors(monkeypatch, capsys):
-    fake_session = FakeSession(requests.RequestException("offline"))
-    monkeypatch.setattr(http_client.requests, "Session", lambda: fake_session)
+    monkeypatch.setattr(http_client, "urlopen", lambda request, timeout: (_ for _ in ()).throw(URLError("offline")))
     monkeypatch.setattr(http_client.time, "time", lambda: 10)
     client = http_client.HTTPClient(delay=0)
 
@@ -164,9 +132,7 @@ def test_http_client_returns_none_for_request_errors(monkeypatch, capsys):
 
 
 def test_http_client_returns_none_for_bad_status(monkeypatch, capsys):
-    fake_response = FakeResponse(error=requests.HTTPError("404 Client Error"))
-    fake_session = FakeSession(fake_response)
-    monkeypatch.setattr(http_client.requests, "Session", lambda: fake_session)
+    monkeypatch.setattr(http_client, "urlopen", lambda request, timeout: (_ for _ in ()).throw(HTTPError("url", 404, "not found", {}, None)))
     monkeypatch.setattr(http_client.time, "time", lambda: 10)
     client = http_client.HTTPClient(delay=0)
 
@@ -211,62 +177,80 @@ def test_agent_handles_incomplete_and_invalid_json_wrappers(monkeypatch):
 
 
 def test_agent_builds_extraction_prompts_and_validates(monkeypatch):
-    agent, _ = make_agent(monkeypatch, '{"links": ["https://example.test/1"]}')
-    assert agent.extract_property_links("listing", "https://example.test") == ["https://example.test/1"]
-
-    agent.client.content = '{"has_next_page": false, "total_in_page": 0, "page_is_empty": true}'
-    assert agent.extract_pagination_info("listing")["page_is_empty"] is True
-
-    agent.client.content = '{"title": "Home", "link": "https://example.test/1"}'
+    agent, _ = make_agent(monkeypatch, '{"title": "Home", "link": "https://example.test/1"}')
     assert agent.extract_property_details("detail", "https://example.test/1")["title"] == "Home"
     assert agent.validate_extraction({"title": "Home", "link": "url"})
     assert not agent.validate_extraction({"error": "bad"})
     assert not agent.validate_extraction({"title": "Home"})
 
 
-def test_count_properties_and_save_page(monkeypatch):
-    monkeypatch.setattr(main_pages_downloader, "Session", lambda: FakeDBSession())
+def test_save_links_writes_json_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(main_pages_downloader, "RAW_DATA_DIR", str(tmp_path))
     instance = main_pages_downloader.AIScraper.__new__(main_pages_downloader.AIScraper)
 
-    assert instance.count_properties_in_html('data-id="1" data-id="2" data-id="1"') == 2
-    assert instance.count_properties_in_html("<html></html>") == 0
-    row_id = instance.save_page_html(2, "https://example.test?pagina=2", "<html>saved</html>")
-    assert isinstance(row_id, int)
+    links = ["https://example.test/imovel/1", "https://example.test/imovel/2"]
+    output_path = instance.save_links("rentals", [{"page": 1, "links": links}])
+
+    assert output_path == tmp_path / "rentals" / "links.json"
+    saved = json.loads(output_path.read_text(encoding="utf-8"))
+    assert saved == [{"page": 1, "links": links}]
+
+
+def test_extract_property_links_deduplicates_and_builds_full_urls_for_main_pages():
+    html = (
+        'https://www.dfimoveis.com.br/imovel/apartamento-1-quarto-aluguel-asa-sul-1375580 '
+        'https://www.dfimoveis.com.br/imovel/apartamento-1-quarto-aluguel-asa-sul-1375580 '
+        'href="/imovel/apartamento-4-quartos-aluguel-park-sul-1328253" '
+        '<a href=/imovel/apartamento-1-quarto-aluguel-sul-aguas-claras-df-rua-17-1424764> '
+        '<a href="/imovel/apartamento-2-quartos-aluguel-areal-aguas-claras-df-qs-5-rua-310-1422425'
+    )
+    links = main_pages_downloader.AIScraper.extract_property_links(html)
+    assert len(links) == 4
+    assert main_pages_downloader.AIScraper.extract_property_links("<html></html>") == []
 
 
 def test_scraper_constructor(monkeypatch):
-    client = FakeHTTPClient([])
-    monkeypatch.setattr(main_pages_downloader, "HTTPClient", lambda: client)
-    monkeypatch.setattr(main_pages_downloader.Base.metadata, "drop_all", lambda bind: None)
-    monkeypatch.setattr(main_pages_downloader.Base.metadata, "create_all", lambda bind: None)
+    http = FakeMainPagesHTTPClient([])
+    monkeypatch.setattr(main_pages_downloader, "HTTPClient", lambda: http)
 
     instance = main_pages_downloader.AIScraper()
 
-    assert instance.http_client is client
+    assert instance.http_client is http
     assert instance.transaction_type is None
 
 
-def test_scraper_saves_pages_and_stops_at_empty_page(monkeypatch):
-    monkeypatch.setattr(main_pages_downloader, "Session", lambda: FakeDBSession())
+def test_scraper_saves_pages_and_stops_at_empty_page(tmp_path, monkeypatch):
+    monkeypatch.setattr(main_pages_downloader, "RAW_DATA_DIR", str(tmp_path))
     instance = main_pages_downloader.AIScraper.__new__(main_pages_downloader.AIScraper)
-    instance.http_client = FakeHTTPClient(['data-id="1"', "<html></html>"])
+    instance.http_client = FakeMainPagesHTTPClient([
+        'href="/imovel/apartamento-1-quarto-aluguel-asa-sul-1375580"',
+        "<html></html>",
+    ])
     monkeypatch.setattr(main_pages_downloader, "MAX_PAGES", None)
 
     pages = instance.scrape_transaction_type("rentals")
 
-    assert len(pages) == 2
+    assert len(pages) == 1
+    assert pages[0]["page"] == 1
+    assert len(pages[0]["links"]) == 1
     assert instance.http_client.urls[0].endswith("/aluguel/df/todos/apartamento?pagina=1")
+    assert len(instance.http_client.urls) == 2
+
+    saved = json.loads((tmp_path / "rentals" / "links.json").read_text(encoding="utf-8"))
+    assert saved == pages
 
 
-def test_scraper_stops_on_fetch_failure_and_max_pages(monkeypatch):
-    monkeypatch.setattr(main_pages_downloader, "Session", lambda: FakeDBSession())
+def test_scraper_stops_on_fetch_failure_and_max_pages(tmp_path, monkeypatch):
+    monkeypatch.setattr(main_pages_downloader, "RAW_DATA_DIR", str(tmp_path))
     failed = main_pages_downloader.AIScraper.__new__(main_pages_downloader.AIScraper)
-    failed.http_client = FakeHTTPClient([None])
+    failed.http_client = FakeMainPagesHTTPClient([None])
     monkeypatch.setattr(main_pages_downloader, "MAX_PAGES", None)
     assert failed.scrape_transaction_type("sales") == []
 
     limited = main_pages_downloader.AIScraper.__new__(main_pages_downloader.AIScraper)
-    limited.http_client = FakeHTTPClient(['data-id="1"'])
+    limited.http_client = FakeMainPagesHTTPClient([
+        'href="/imovel/apartamento-1-quarto-aluguel-asa-sul-1375580"'
+    ])
     monkeypatch.setattr(main_pages_downloader, "MAX_PAGES", 1)
     assert len(limited.scrape_transaction_type("sales")) == 1
     limited.close()
@@ -308,10 +292,6 @@ def test_downloader_scripts_support_direct_execution(monkeypatch, script_path):
     assert result.value.code == 0
 
 
-def test_config_exposes_processed_data_dir():
-    assert os.path.basename(os.path.normpath(config.PROCESSED_DATA_DIR)) == "properties"
-
-
 def test_agent_extracts_property_page_details(monkeypatch):
     agent, client = make_agent(monkeypatch, '{"link": "https://example.test/1", "title": "Apto"}')
 
@@ -319,20 +299,6 @@ def test_agent_extracts_property_page_details(monkeypatch):
 
     assert result == {"link": "https://example.test/1", "title": "Apto"}
     assert "<html>detail</html>" in client.calls[0]["messages"][0]["content"]
-
-
-class FakeExtractionAgent:
-    def __init__(self, results):
-        self.results = iter(results)
-        self.calls = []
-
-    def extract_property_page_details(self, html, property_url):
-        self.calls.append((html, property_url))
-        return next(self.results)
-
-    @staticmethod
-    def validate_extraction(data):
-        return "error" not in data and "link" in data
 
 
 class FakeDetailHTTPClient:
@@ -349,24 +315,13 @@ class FakeDetailHTTPClient:
         self.closed = True
 
 
-def test_property_downloader_test_fakes_record_calls():
-    agent = FakeExtractionAgent([{"link": "url"}])
-    assert agent.extract_property_page_details("html", "url") == {"link": "url"}
-    assert agent.calls == [("html", "url")]
-    assert agent.validate_extraction({"link": "url"})
-    assert not agent.validate_extraction({"error": "bad"})
-
-    client = FakeDetailHTTPClient({"url": "html"})
-    assert client.get("url") == "html"
-    client.close()
-    assert client.closed
-
-
 def test_extract_property_links_deduplicates_and_builds_full_urls():
     html = (
         '<a href="/imovel/apto-1">1</a>'
         '<a href="/imovel/apto-1">duplicate</a>'
-        '<a href="/imovel/apto-2">2</a>'
+        '<a href=/imovel/apto-2>unquoted 2</a>'
+        '<a href=\'/imovel/apto-3\'>single quoted 3</a>'
+        '<a href="https://example.test/imovel/apto-4">absolute 4</a>'
         '<a href="/mapa?negocio=aluguel">not an ad</a>'
     )
 
@@ -375,6 +330,8 @@ def test_extract_property_links_deduplicates_and_builds_full_urls():
     assert links == [
         "https://example.test/imovel/apto-1",
         "https://example.test/imovel/apto-2",
+        "https://example.test/imovel/apto-3",
+        "https://example.test/imovel/apto-4",
     ]
 
 
