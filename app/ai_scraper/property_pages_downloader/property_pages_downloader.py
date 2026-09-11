@@ -70,18 +70,15 @@ class PropertyPagesDownloader:
         return properties
 
     @staticmethod
-    def _load_page_paths(transaction_type: str, max_pages: Optional[int] = None) -> List[Path]:
+    def _load_page_paths(transaction_type: str) -> List[Path]:
         pages_dir = Path(RAW_DATA_DIR) / transaction_type / "pages"
-        paths = sorted(pages_dir.glob("page_*.html"))
-        if max_pages:
-            paths = paths[:max_pages]
-        return paths
+        return sorted(pages_dir.glob("page_*.html"))
 
     def extract_transaction_type(
-        self, transaction_type: str, max_pages: Optional[int] = None
+        self, transaction_type: str
     ) -> List[Path]:
         """Read saved listing pages and download their linked property pages."""
-        page_paths = self._load_page_paths(transaction_type, max_pages)
+        page_paths = self._load_page_paths(transaction_type)
         print(
             f"\n🔎 Downloading {transaction_type} property pages from "
             f"{len(page_paths)} saved page(s)..."

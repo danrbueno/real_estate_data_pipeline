@@ -74,7 +74,7 @@ example_usage.py               # Exemplos de uso em Python
 ### Para Começar Rápido (5 minutos)
 1. Este arquivo (índice)
 2. [AI_SCRAPER_README.md](AI_SCRAPER_README.md)
-3. Execute: `python ai_scraper/main.py --type rentals --max-pages 1`
+3. Execute: `python -m app.ai_scraper.ad_links_collector.main --type rentals`
 
 ### Para Entender Completamente (30 minutos)
 1. [ARCHITECTURE.md](ARCHITECTURE.md)
@@ -162,27 +162,24 @@ airflow/dags/
 - Error handling
 
 #### `ai_agent.py`
-- Agente OpenAI principal
-- 3 métodos de extração:
-  - `extract_property_links()` - URLs dos imóveis
-  - `extract_pagination_info()` - Informações de páginas
-  - `extract_property_details()` - Dados completos do imóvel
-- Validação de dados extraídos
+- Agente OpenAI (reservado para uma etapa futura de extração de campos)
+- Métodos de extração:
+  - `extract_property_details()` - Dados de uma página de anúncio
+  - `extract_property_page_details()` - Dados da página de detalhe do anúncio
+- Validação de dados extraídos (`validate_extraction()`)
 
-#### `scraper.py`
-- Orquestrador principal (AIScraper)
+#### `ad_links_collector.py`
+- Orquestrador principal (`AdLinksCollector`)
 - Gerencia fluxo completo:
-  - Fetch de páginas
-  - Extração de links
+  - Fetch de páginas (HTTP puro, sem IA)
+  - Extração de links via regex
   - Loop de paginação
-  - Extração de detalhes
-  - Salvamento em JSON
+  - Salvamento em `links.json`
 - Suporta múltiplos transaction types
 
 #### `main.py`
 - CLI entry point
-- Argumentos: `--type`, `--max-pages`
-- Integra HTTPClient + AIAgent + AIScraper
+- Argumento: `--type`
 - Error handling e logging
 
 #### `README.md`
@@ -301,14 +298,14 @@ airflow/dags/
 cat AI_SCRAPER_README.md
 
 # 2. Instale dependências
-pip install -r ai_scraper/requirements.txt
+pip install -r config/requirements.txt
 
 # 3. Configure
 cp .env.example .env
 # Edite .env com sua API key
 
 # 4. Teste
-python ai_scraper/main.py --type rentals --max-pages 1
+python -m app.ai_scraper.ad_links_collector.main --type rentals
 
 # 5. Leia documentação completa
 # Siga o Guia de Leitura Recomendado acima

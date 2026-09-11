@@ -72,11 +72,11 @@ c:\repos\real_estate_data_pipeline\
 
 ```
 ai_scraper/
-├── ai_agent.py                # Agente IA (OpenAI)
+├── ai_agent.py                # Agente IA (reservado p/ extração de campos)
 ├── http_client.py             # Cliente HTTP
-├── scraper.py                 # Orquestrador
-├── config.py                  # Configuração
-└── main.py                    # CLI
+├── ad_links_collector/        # Orquestrador (fetch + regex, sem IA)
+├── property_pages_downloader/ # Download de páginas de anúncio
+└── config.py                  # Configuração
 ```
 
 ## 🚀 Fluxo de Dados
@@ -87,19 +87,13 @@ Input:
     ↓
 HTTPClient (fetch HTML)
     ↓
-AIScrapingAgent (OpenAI)
-    ├── extract_property_links()
-    ├── extract_pagination_info()
-    └── extract_property_details()
-    ↓
-AIScraper (orchestrate)
-    ├── Loop páginas
-    ├── Valida dados
-    └── Salva JSON
+AdLinksCollector (regex, sem IA)
+    ├── collect_page_ad_links()
+    └── collect() (orquestra paginação)
     ↓
 Output:
-  data/web/rentals.json
-  data/web/sales.json
+  data/raw/rentals/links.json
+  data/raw/sales/links.json
     ↓
 Pipeline Existente
   (transform + load + database)
@@ -142,7 +136,7 @@ mysql-connector-python
 | `ai_scraper/` | ✅ Ativo | Use em produção |
 | `dag_pipeline_real_estate_ai.py` | ✅ Ativo | Use em Airflow |
 | `OPTIMIZATION_GUIDE.md` | ✅ Referência | Consulte para otimização |
-| `data/web/` | ✅ Ativo | Saída JSON |
+| `data/raw/` | ✅ Ativo | Links e HTML de anúncios |
 | `airflow/dags/pipelines/` | ✅ Ativo | Sem mudanças |
 
 ## 📈 Crescimento do Projeto
@@ -180,27 +174,24 @@ Versão 2.0:
                      │
                      ↓
     ┌────────────────────────────────┐
-    │    AIScrapingAgent             │
-    │  (OpenAI GPT-4/3.5)            │
-    │  - extract_property_links()    │
-    │  - extract_pagination_info()   │
-    │  - extract_property_details()  │
+    │  AdLinksCollector               │
+    │  (HTTP + regex, sem IA)         │
+    │  - collect_page_ad_links()      │
+    │  - collect() (loop de páginas)  │
     └────────────┬───────────────────┘
                  │
                  ↓
-        ┌─────────────────┐
-        │  AIScraper      │
-        │  (Orchestrator) │
-        │  - page loop    │
-        │  - validation   │
-        │  - JSON save    │
-        └────────┬────────┘
+    ┌────────────────────────────┐
+    │  data/raw/                  │
+    │  ├── rentals/links.json      │
+    │  └── sales/links.json        │
+    └────────────┬───────────────┘
                  │
                  ↓
     ┌────────────────────────────┐
-    │  data/web/                 │
-    │  ├── rentals.json          │
-    │  └── sales.json            │
+    │  property_pages_downloader │
+    │  - fetch de cada anúncio   │
+    │  - salva HTML localmente   │
     └────────────┬───────────────┘
                  │
                  ↓
@@ -215,9 +206,9 @@ Versão 2.0:
 ## 📝 Próximas Etapas
 
 1. **Verificar Estrutura** ✅ (feito)
-2. **Instalar Dependências** → `pip install -r ai_scraper/requirements.txt`
+2. **Instalar Dependências** → `pip install -r config/requirements.txt`
 3. **Configurar .env** → Adicionar `OPENAI_API_KEY`
-4. **Testar Básico** → `python ai_scraper/main.py --type rentals --max-pages 1`
+4. **Testar Básico** → `python -m app.ai_scraper.ad_links_collector.main --type rentals`
 5. **Integrar Airflow** → Ativar `dag_pipeline_real_estate_ai.py`
 6. **Monitorar Dados** → Validar qualidade contínua
 

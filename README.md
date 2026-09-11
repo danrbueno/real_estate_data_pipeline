@@ -28,15 +28,16 @@ This Airflow-based project executes the following tasks every day at 12 AM:
 ```mermaid
 graph LR
     A["🌐 DFImoveis Website"] -->|"Fetch HTML"| B["📡 HTTPClient<br/>Rate Limited"]
-    B -->|"Raw HTML"| C["🤖 AIScrapingAgent<br/>OpenAI GPT-4"]
-    C -->|"Extract Data"| D["🎯 AIScraper<br/>Orchestrator"]
-    D -->|"Save"| E["📄 JSON Files<br/>rentals.json<br/>sales.json"]
+    B -->|"Raw HTML"| C["🔗 AdLinksCollector<br/>HTTP + regex, no AI"]
+    C -->|"Ad links"| D["📄 links.json<br/>per transaction type"]
+    D -->|"Download each ad"| H["📥 PropertyPagesDownloader"]
+    H -->|"Save HTML"| E["🗂️ Raw property HTML<br/>data/raw/&lt;type&gt;/properties/"]
     E -->|"Transform"| F["🔄 Pandas<br/>Cleaning & Staging"]
     F -->|"Load"| G["🗄️ MySQL Database"]
     
     style A fill:#4A90E2,color:#fff
     style C fill:#FF6B6B,color:#fff
-    style D fill:#50C878,color:#fff
+    style H fill:#50C878,color:#fff
     style G fill:#9B59B6,color:#fff
 ```
 
@@ -247,9 +248,10 @@ real_estate_data_pipeline/
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| **AIScrapingAgent** | Intelligent data extraction | OpenAI GPT-4 |
-| **HTTPClient** | Web requests with rate limiting | Python requests |
-| **AIScraper** | Pipeline orchestration | Python |
+| **AdLinksCollector** | Ad link extraction from listing pages (HTTP + regex, no AI) | Python |
+| **PropertyPagesDownloader** | Downloads each ad's detail-page HTML | Python |
+| **AIScrapingAgent** | Reserved for future structured field extraction | OpenAI GPT-4 |
+| **HTTPClient** | Web requests with rate limiting | Python `urllib` (standard library) |
 | **Airflow DAG** | Task scheduling & monitoring | Apache Airflow |
 | **Pandas** | Data cleaning & transformation | Python pandas |
 | **SQLAlchemy** | Database ORM & loading | Python SQLAlchemy |
